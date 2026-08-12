@@ -7,10 +7,14 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   String _error   = '';
   String? _token;
+  String? _staffName = 'Suresh';
+  String? _garageName = 'Shree Auto Garage';
 
-  bool    get isLoading => _isLoading;
-  String  get error     => _error;
-  String? get token     => _token;
+  bool    get isLoading  => _isLoading;
+  String  get error      => _error;
+  String? get token      => _token;
+  String? get staffName  => _staffName;
+  String? get garageName => _garageName;
 
   /// Call once on app start to restore a saved token.
   Future<void> restoreSession() async {
