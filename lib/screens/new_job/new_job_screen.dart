@@ -62,13 +62,34 @@ class _NewJobScreenState extends State<NewJobScreen> {
     }
   }
 
+  void _applyPresetPackage(String type) {
+    setState(() {
+      _items.clear();
+      if (type == 'general_service') {
+        _items.addAll([
+          {'type': 'oil', 'description': 'Engine Oil Change', 'price': 350.0, 'flag': 'none'},
+          {'type': 'service', 'description': 'Brake Pad Check & Adjustment', 'price': 150.0, 'flag': 'none'},
+          {'type': 'service', 'description': 'Chain Lubrication & Tensioning', 'price': 100.0, 'flag': 'none'},
+          {'type': 'service', 'description': 'Air Filter Cleaning', 'price': 200.0, 'flag': 'none'},
+        ]);
+      } else if (type == 'repair_work') {
+        _items.addAll([
+          {'type': 'repair', 'description': 'Spark Plug Replacement', 'price': 250.0, 'flag': 'needs_inspection'},
+          {'type': 'repair', 'description': 'Battery & Electrical Health Check', 'price': 120.0, 'flag': 'none'},
+          {'type': 'repair', 'description': 'Wheel Balancing & Alignment', 'price': 400.0, 'flag': 'none'},
+        ]);
+      }
+    });
+    Fluttertoast.showToast(msg: 'Applied $type package!');
+  }
+
   void _showAddCustomerSheet() {
     _nameCtrl.text = _searchCtrl.text.contains(RegExp(r'[0-9]')) ? '' : _searchCtrl.text;
     _phoneCtrl.text = _searchCtrl.text.contains(RegExp(r'[0-9]')) ? _searchCtrl.text : '';
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppTheme.kCard,
+      backgroundColor: AppTheme.kSurface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => _AddCustomerSheet(
         nameCtrl: _nameCtrl, phoneCtrl: _phoneCtrl, emailCtrl: _emailCtrl,
@@ -89,7 +110,7 @@ class _NewJobScreenState extends State<NewJobScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppTheme.kCard,
+      backgroundColor: AppTheme.kSurface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => _AddVehicleSheet(
         numberCtrl: _vehicleNumberCtrl, brandCtrl: _brandCtrl,
@@ -115,7 +136,7 @@ class _NewJobScreenState extends State<NewJobScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppTheme.kCard,
+      backgroundColor: AppTheme.kSurface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => _AddItemSheet(
         onAdd: (item) => setState(() => _items.add(item)),
@@ -141,14 +162,14 @@ class _NewJobScreenState extends State<NewJobScreen> {
     }
   }
 
-  double get _totalEstimate => _items.fold(0, (sum, i) => sum + (i['price'] as double));
+  double get _totalEstimate => _items.fold(0.0, (sum, i) => sum + ((i['price'] as num).toDouble()));
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.kBackground,
       appBar: AppBar(
-        title: const Text('New Job Card'),
+        title: const Text('Create New Job'),
         backgroundColor: AppTheme.kSurface,
       ),
       body: Stepper(
@@ -182,7 +203,7 @@ class _NewJobScreenState extends State<NewJobScreen> {
         steps: [
           // ── Step 1: Customer ──────────────────────────────────────
           Step(
-            title: Text('Customer', style: TextStyle(color: _currentStep >= 0 ? AppTheme.kPrimary : AppTheme.kTextMuted)),
+            title: Text('Customer', style: TextStyle(color: _currentStep >= 0 ? AppTheme.kPrimary : AppTheme.kTextMuted, fontWeight: FontWeight.bold)),
             subtitle: _selectedCustomer != null ? Text(_selectedCustomer!.name) : null,
             isActive: _currentStep >= 0,
             state: _selectedCustomer != null ? StepState.complete : StepState.indexed,
@@ -197,24 +218,29 @@ class _NewJobScreenState extends State<NewJobScreen> {
                     prefixIcon: _isSearching
                         ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
                         : const Icon(Icons.search, color: AppTheme.kTextMuted),
-                    filled: true, fillColor: AppTheme.kSurface,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
                   onChanged: _searchCustomers,
                 ),
                 ..._searchResults.map((c) => ListTile(
                   leading: const CircleAvatar(backgroundColor: AppTheme.kPrimary, child: Icon(Icons.person, color: Colors.white)),
-                  title: Text(c.name, style: const TextStyle(color: AppTheme.kTextPrimary)),
+                  title: Text(c.name, style: const TextStyle(color: AppTheme.kTextPrimary, fontWeight: FontWeight.w600)),
                   subtitle: Text(c.phone, style: const TextStyle(color: AppTheme.kTextMuted)),
                   trailing: Text('${c.vehicles.length} vehicle(s)', style: const TextStyle(color: AppTheme.kTextMuted, fontSize: 12)),
                   onTap: () => setState(() { _selectedCustomer = c; _searchResults = []; _currentStep = 1; }),
                 )),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.person_add, color: AppTheme.kPrimary),
-                  label: const Text('Add New Customer', style: TextStyle(color: AppTheme.kPrimary)),
-                  style: OutlinedButton.styleFrom(side: const BorderSide(color: AppTheme.kPrimary)),
-                  onPressed: _showAddCustomerSheet,
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.person_add, color: AppTheme.kPrimary),
+                    label: const Text('Add New Customer', style: TextStyle(color: AppTheme.kPrimary, fontWeight: FontWeight.bold)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppTheme.kPrimary),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: _showAddCustomerSheet,
+                  ),
                 ),
               ],
             ),
@@ -222,7 +248,7 @@ class _NewJobScreenState extends State<NewJobScreen> {
 
           // ── Step 2: Vehicle ───────────────────────────────────────
           Step(
-            title: Text('Vehicle', style: TextStyle(color: _currentStep >= 1 ? AppTheme.kPrimary : AppTheme.kTextMuted)),
+            title: Text('Vehicle', style: TextStyle(color: _currentStep >= 1 ? AppTheme.kPrimary : AppTheme.kTextMuted, fontWeight: FontWeight.bold)),
             subtitle: _selectedVehicle != null ? Text(_selectedVehicle!.vehicleNumber) : null,
             isActive: _currentStep >= 1,
             state: _selectedVehicle != null ? StepState.complete : StepState.indexed,
@@ -230,76 +256,133 @@ class _NewJobScreenState extends State<NewJobScreen> {
               children: [
                 if (_selectedCustomer != null)
                   ..._selectedCustomer!.vehicles.map((v) => Card(
-                    color: _selectedVehicle?.id == v.id ? AppTheme.kPrimary.withValues(alpha: 0.15) : AppTheme.kSurface,
+                    color: _selectedVehicle?.id == v.id ? AppTheme.kPrimary.withValues(alpha: 0.1) : AppTheme.kSurface,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: _selectedVehicle?.id == v.id ? AppTheme.kPrimary : Colors.transparent),
+                      borderRadius: BorderRadius.circular(14),
+                      side: BorderSide(color: _selectedVehicle?.id == v.id ? AppTheme.kPrimary : AppTheme.kBorder, width: _selectedVehicle?.id == v.id ? 2 : 1),
                     ),
                     child: ListTile(
-                      leading: const Icon(Icons.two_wheeler, color: AppTheme.kPrimary),
+                      leading: const Icon(Icons.two_wheeler, color: AppTheme.kPrimary, size: 28),
                       title: Text(v.vehicleNumber, style: const TextStyle(color: AppTheme.kTextPrimary, fontWeight: FontWeight.bold)),
                       subtitle: Text('${v.brand ?? ''} ${v.model ?? ''}'.trim(), style: const TextStyle(color: AppTheme.kTextMuted)),
                       onTap: () => setState(() { _selectedVehicle = v; _currentStep = 2; }),
                     ),
                   )),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.add, color: AppTheme.kPrimary),
-                  label: const Text('Add New Vehicle', style: TextStyle(color: AppTheme.kPrimary)),
-                  style: OutlinedButton.styleFrom(side: const BorderSide(color: AppTheme.kPrimary)),
-                  onPressed: _showAddVehicleSheet,
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.add, color: AppTheme.kPrimary),
+                    label: const Text('Add New Vehicle', style: TextStyle(color: AppTheme.kPrimary, fontWeight: FontWeight.bold)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppTheme.kPrimary),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: _showAddVehicleSheet,
+                  ),
                 ),
               ],
             ),
           ),
 
-          // ── Step 3: Items ─────────────────────────────────────────
+          // ── Step 3: Preset Shortcuts & Items ──────────────────────
           Step(
-            title: Text('Add Items', style: TextStyle(color: _currentStep >= 2 ? AppTheme.kPrimary : AppTheme.kTextMuted)),
+            title: Text('Select Job Type & Items', style: TextStyle(color: _currentStep >= 2 ? AppTheme.kPrimary : AppTheme.kTextMuted, fontWeight: FontWeight.bold)),
             isActive: _currentStep >= 2,
             content: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 3 Big Shortcut Buttons
+                const Text('Quick Select Job Type:', style: TextStyle(color: AppTheme.kTextMuted, fontSize: 13, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ShortcutCard(
+                        icon: Icons.build_circle,
+                        title: 'General Service',
+                        color: AppTheme.kAccent,
+                        onTap: () => _applyPresetPackage('general_service'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _ShortcutCard(
+                        icon: Icons.handyman,
+                        title: 'Repair Work',
+                        color: AppTheme.kPrimary,
+                        onTap: () => _applyPresetPackage('repair_work'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _ShortcutCard(
+                        icon: Icons.settings,
+                        title: 'Custom Job',
+                        color: AppTheme.kSuccess,
+                        onTap: _showAddItemSheet,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text('Job Checklist:', style: TextStyle(color: AppTheme.kTextMuted, fontSize: 13, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
                 if (_items.isEmpty)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Text('No items yet. Tap + to add.', style: TextStyle(color: AppTheme.kTextMuted)),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppTheme.kSurface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppTheme.kBorder),
+                    ),
+                    child: const Column(
+                      children: [
+                        Icon(Icons.checklist_rtl, color: AppTheme.kTextMuted, size: 36),
+                        SizedBox(height: 8),
+                        Text('Tap a Quick Select button above or add custom items.', style: TextStyle(color: AppTheme.kTextMuted, fontSize: 13)),
+                      ],
                     ),
                   ),
                 ..._items.asMap().entries.map((e) => _ItemRow(
                   item: e.value,
                   onDelete: () => setState(() => _items.removeAt(e.key)),
                 )),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.add, color: AppTheme.kPrimary),
-                  label: const Text('Add Item', style: TextStyle(color: AppTheme.kPrimary)),
-                  style: OutlinedButton.styleFrom(side: const BorderSide(color: AppTheme.kPrimary)),
+                  label: const Text('Add Custom Item', style: TextStyle(color: AppTheme.kPrimary)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppTheme.kPrimary),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                   onPressed: _showAddItemSheet,
                 ),
                 if (_items.isNotEmpty) ...[
-                  const Divider(height: 24),
+                  const Divider(height: 24, color: AppTheme.kBorder),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Estimated Total', style: TextStyle(color: AppTheme.kTextMuted)),
-                      Text('₹${_totalEstimate.toStringAsFixed(2)}',
-                          style: const TextStyle(color: AppTheme.kPrimary, fontWeight: FontWeight.bold, fontSize: 18)),
+                      const Text('Total Estimated Amount', style: TextStyle(color: AppTheme.kTextMuted, fontSize: 15, fontWeight: FontWeight.w600)),
+                      Text('₹${_totalEstimate.toStringAsFixed(0)}',
+                          style: const TextStyle(color: AppTheme.kPrimary, fontWeight: FontWeight.bold, fontSize: 22)),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 52,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.kPrimary,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                        backgroundColor: AppTheme.kAccent,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
                       onPressed: _isSaving ? null : _saveJobCard,
                       child: _isSaving
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('Save Job Card', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                          : const Text('Save & Create Job Card', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -307,6 +390,46 @@ class _NewJobScreenState extends State<NewJobScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Shortcut Card ────────────────────────────────────────────────────────────
+class _ShortcutCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ShortcutCard({required this.icon, required this.title, required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: color.withValues(alpha: 0.4)),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 26),
+              const SizedBox(height: 6),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -323,7 +446,7 @@ class _AddCustomerSheet extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 16, right: 16, top: 24),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('New Customer', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppTheme.kTextPrimary)),
+        Text('New Customer', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppTheme.kTextPrimary, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
         _buildField(nameCtrl, 'Name *'),
         const SizedBox(height: 12),
@@ -333,7 +456,7 @@ class _AddCustomerSheet extends StatelessWidget {
         const SizedBox(height: 20),
         SizedBox(width: double.infinity, height: 48,
           child: ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.kPrimary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.kAccent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
             onPressed: onSave,
             child: const Text('Save Customer', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
@@ -351,8 +474,6 @@ class _AddCustomerSheet extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: AppTheme.kTextMuted),
-        filled: true, fillColor: AppTheme.kSurface,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
     );
   }
@@ -369,7 +490,7 @@ class _AddVehicleSheet extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 16, right: 16, top: 24),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('New Vehicle', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppTheme.kTextPrimary)),
+        Text('New Vehicle', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppTheme.kTextPrimary, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
         _buildField(numberCtrl, 'Vehicle Number *'),
         const SizedBox(height: 12),
@@ -381,7 +502,7 @@ class _AddVehicleSheet extends StatelessWidget {
         const SizedBox(height: 20),
         SizedBox(width: double.infinity, height: 48,
           child: ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.kPrimary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.kAccent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
             onPressed: onSave,
             child: const Text('Save Vehicle', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
@@ -397,8 +518,6 @@ class _AddVehicleSheet extends StatelessWidget {
       style: const TextStyle(color: AppTheme.kTextPrimary),
       decoration: InputDecoration(
         labelText: label, labelStyle: const TextStyle(color: AppTheme.kTextMuted),
-        filled: true, fillColor: AppTheme.kSurface,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
     );
   }
@@ -422,10 +541,9 @@ class _AddItemSheetState extends State<_AddItemSheet> {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 16, right: 16, top: 24),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Add Job Item', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppTheme.kTextPrimary)),
+        Text('Add Custom Job Item', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppTheme.kTextPrimary, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
-        // Type chips
-        const Text('Type', style: TextStyle(color: AppTheme.kTextMuted, fontSize: 12)),
+        const Text('Type', style: TextStyle(color: AppTheme.kTextMuted, fontSize: 12, fontWeight: FontWeight.bold)),
         const SizedBox(height: 6),
         Wrap(spacing: 8, children: ['repair', 'service', 'oil', 'part', 'other'].map((t) => ChoiceChip(
           label: Text(t[0].toUpperCase() + t.substring(1)),
@@ -434,42 +552,33 @@ class _AddItemSheetState extends State<_AddItemSheet> {
           onSelected: (_) => setState(() => _type = t),
         )).toList()),
         const SizedBox(height: 12),
-        // Description
         TextField(
           controller: _descCtrl,
           style: const TextStyle(color: AppTheme.kTextPrimary),
-          decoration: InputDecoration(
-            labelText: 'Description *', labelStyle: const TextStyle(color: AppTheme.kTextMuted),
-            filled: true, fillColor: AppTheme.kSurface,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-          ),
+          decoration: const InputDecoration(labelText: 'Description *'),
         ),
         const SizedBox(height: 12),
-        // Price
         TextField(
           controller: _priceCtrl,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           style: const TextStyle(color: AppTheme.kTextPrimary),
-          decoration: InputDecoration(
-            labelText: 'Price (₹) *', labelStyle: const TextStyle(color: AppTheme.kTextMuted),
-            prefixText: '₹ ', prefixStyle: const TextStyle(color: AppTheme.kPrimary),
-            filled: true, fillColor: AppTheme.kSurface,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          decoration: const InputDecoration(
+            labelText: 'Price (₹) *',
+            prefixText: '₹ ', prefixStyle: TextStyle(color: AppTheme.kPrimary, fontWeight: FontWeight.bold),
           ),
         ),
         const SizedBox(height: 12),
-        // Flag
-        const Text('Flag', style: TextStyle(color: AppTheme.kTextMuted, fontSize: 12)),
+        const Text('Status Flag', style: TextStyle(color: AppTheme.kTextMuted, fontSize: 12, fontWeight: FontWeight.bold)),
         const SizedBox(height: 6),
         Wrap(spacing: 8, children: [
           _flagChip('none', 'None', Colors.grey),
           _flagChip('needs_inspection', '🟡 Needs Inspection', AppTheme.kWarning),
-          _flagChip('needs_confirmation', '🔵 Needs Confirmation', Colors.blue),
+          _flagChip('needs_confirmation', '🔵 Needs Confirmation', AppTheme.kPrimary),
         ]),
         const SizedBox(height: 20),
         SizedBox(width: double.infinity, height: 48,
           child: ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.kPrimary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.kAccent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
             onPressed: () {
               if (_descCtrl.text.trim().isEmpty || _priceCtrl.text.trim().isEmpty) return;
               widget.onAdd({'type': _type, 'description': _descCtrl.text.trim(), 'price': double.tryParse(_priceCtrl.text) ?? 0, 'flag': _flag});
@@ -502,7 +611,7 @@ class _ItemRow extends StatelessWidget {
   Color get _flagColor {
     switch (item['flag']) {
       case 'needs_inspection': return AppTheme.kWarning;
-      case 'needs_confirmation': return Colors.blue;
+      case 'needs_confirmation': return AppTheme.kPrimary;
       case 'confirmed': return AppTheme.kSuccess;
       default: return Colors.transparent;
     }
@@ -513,24 +622,23 @@ class _ItemRow extends StatelessWidget {
     return Card(
       color: AppTheme.kSurface,
       margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         leading: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(color: AppTheme.kPrimary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
-          child: Text(item['type'].toString().toUpperCase(), style: const TextStyle(color: AppTheme.kPrimary, fontSize: 10, fontWeight: FontWeight.bold)),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(color: AppTheme.kPrimary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+          child: Text(item['type'].toString().toUpperCase(), style: const TextStyle(color: AppTheme.kPrimary, fontSize: 11, fontWeight: FontWeight.bold)),
         ),
-        title: Text(item['description'], style: const TextStyle(color: AppTheme.kTextPrimary)),
+        title: Text(item['description'], style: const TextStyle(color: AppTheme.kTextPrimary, fontWeight: FontWeight.w600)),
         subtitle: item['flag'] != 'none'
             ? Container(
                 margin: const EdgeInsets.only(top: 4),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(color: _flagColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
-                child: Text(item['flag'].toString().replaceAll('_', ' '), style: TextStyle(color: _flagColor, fontSize: 11)),
+                child: Text(item['flag'].toString().replaceAll('_', ' '), style: TextStyle(color: _flagColor, fontSize: 11, fontWeight: FontWeight.bold)),
               )
             : null,
         trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-          Text('₹${(item['price'] as double).toStringAsFixed(0)}', style: const TextStyle(color: AppTheme.kPrimary, fontWeight: FontWeight.bold)),
+          Text('₹${((item['price'] as num).toDouble()).toStringAsFixed(0)}', style: const TextStyle(color: AppTheme.kPrimary, fontWeight: FontWeight.bold, fontSize: 16)),
           IconButton(icon: const Icon(Icons.delete_outline, color: AppTheme.kError, size: 20), onPressed: onDelete),
         ]),
       ),
