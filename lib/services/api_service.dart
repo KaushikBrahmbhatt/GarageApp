@@ -10,6 +10,7 @@ class ApiService {
     return {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
+      'bypass-tunnel-reminder': 'true',
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
