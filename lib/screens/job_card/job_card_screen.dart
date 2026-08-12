@@ -31,7 +31,7 @@ class _JobCardScreenState extends State<JobCardScreen> {
     try {
       await JobCardService.updateStatus(jobCard.id, newStatus);
       if (mounted) context.read<JobCardProvider>().fetchJobCard(widget.id);
-      Fluttertoast.showToast(msg: 'Job marked as $newStatus');
+      Fluttertoast.showToast(msg: 'Job marked as ${newStatus.replaceAll('_', ' ')}');
     } catch (e) {
       if (mounted) context.read<JobCardProvider>().fetchJobCard(widget.id);
     } finally {
@@ -260,7 +260,7 @@ class _JobCardScreenState extends State<JobCardScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Action Buttons: "+ Add Extra Work" AND "Complete Job"
+          // Action Buttons
           if (status == 'completed') ...[
             SizedBox(
               width: double.infinity,
@@ -273,7 +273,25 @@ class _JobCardScreenState extends State<JobCardScreen> {
               ),
             ),
           ] else ...[
-            // Button 1: + Add Extra Work
+            // Button 1: Start Work (If new)
+            if (status == 'new') ...[
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
+                  onPressed: _updatingStatus
+                      ? null
+                      : () => _updateStatus(jobCard ?? _fallbackJobCard(), 'in_progress'),
+                  child: _updatingStatus
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Text('Start Work ▶', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            // Button 2: + Add Extra Work
             SizedBox(
               width: double.infinity,
               height: 48,
@@ -288,12 +306,13 @@ class _JobCardScreenState extends State<JobCardScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            // Button 2: Complete Job
+
+            // Button 3: Complete Job
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
                 onPressed: _updatingStatus
                     ? null
                     : () => _updateStatus(jobCard ?? _fallbackJobCard(), 'completed'),
