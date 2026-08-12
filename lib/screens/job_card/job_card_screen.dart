@@ -9,7 +9,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 
 class JobCardScreen extends StatefulWidget {
   final int id;
-  const JobCardScreen({super.key});
+  const JobCardScreen({super.key, required this.id});
 
   @override
   State<JobCardScreen> createState() => _JobCardScreenState();
@@ -112,6 +112,17 @@ class _JobCardScreenState extends State<JobCardScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  JobCard _fallbackJobCard() {
+    return JobCard(
+      id: widget.id,
+      status: 'new',
+      estimatedTotal: 450.0,
+      finalTotal: 450.0,
+      createdAt: DateTime.now(),
+      items: [],
     );
   }
 
@@ -273,7 +284,7 @@ class _JobCardScreenState extends State<JobCardScreen> {
                   side: const BorderSide(color: AppColors.primary, width: 1.5),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                onPressed: () => _showAddExtraWorkSheet(jobCard ?? JobCard(id: widget.id, garageId: 1, customerId: 1, vehicleId: 1, status: 'new', estimatedTotal: 450, finalTotal: 450, createdAt: DateTime.now(), updatedAt: DateTime.now(), items: [])),
+                onPressed: () => _showAddExtraWorkSheet(jobCard ?? _fallbackJobCard()),
               ),
             ),
             const SizedBox(height: 12),
@@ -285,7 +296,7 @@ class _JobCardScreenState extends State<JobCardScreen> {
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
                 onPressed: _updatingStatus
                     ? null
-                    : () => _updateStatus(jobCard ?? JobCard(id: widget.id, garageId: 1, customerId: 1, vehicleId: 1, status: 'new', estimatedTotal: 450, finalTotal: 450, createdAt: DateTime.now(), updatedAt: DateTime.now(), items: []), 'completed'),
+                    : () => _updateStatus(jobCard ?? _fallbackJobCard(), 'completed'),
                 child: _updatingStatus
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                     : const Text('Complete Job ✓', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
