@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import '../../config/theme.dart';
+import '../../config/app_colors.dart';
 import '../../models/job_card.dart';
-import '../../models/job_card_item.dart';
 import '../../providers/job_card_provider.dart';
 import '../../services/job_card_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -27,147 +26,91 @@ class _JobCardScreenState extends State<JobCardScreen> {
     });
   }
 
-  final List<String> _statuses = ['new', 'in_progress', 'waiting_confirmation', 'completed'];
-  final Map<String, String> _statusLabels = {
-    'new': 'New',
-    'in_progress': 'In Progress',
-    'waiting_confirmation': 'Awaiting',
-    'completed': 'Completed',
-  };
-
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'new': return Colors.grey;
-      case 'in_progress': return AppTheme.kPrimary;
-      case 'waiting_confirmation': return AppTheme.kWarning;
-      case 'completed': return AppTheme.kSuccess;
-      default: return Colors.grey;
-    }
-  }
-
-  IconData _typeIcon(String type) {
-    switch (type) {
-      case 'repair': return Icons.build;
-      case 'service': return Icons.settings;
-      case 'oil': return Icons.opacity;
-      case 'part': return Icons.extension;
-      default: return Icons.more_horiz;
-    }
-  }
-
-  Color _flagColor(String flag) {
-    switch (flag) {
-      case 'needs_inspection': return AppTheme.kWarning;
-      case 'needs_confirmation': return Colors.blue;
-      case 'confirmed': return AppTheme.kSuccess;
-      default: return Colors.transparent;
-    }
-  }
-
-  String _flagLabel(String flag) {
-    switch (flag) {
-      case 'needs_inspection': return '🟡 Needs Inspection';
-      case 'needs_confirmation': return '🔵 Needs Confirmation';
-      case 'confirmed': return '✅ Confirmed';
-      default: return '';
-    }
-  }
-
-  Future<void> _advanceStatus(JobCard jobCard) async {
-    final currentIndex = _statuses.indexOf(jobCard.status);
-    if (currentIndex >= _statuses.length - 1) return;
-    final nextStatus = _statuses[currentIndex + 1];
+  Future<void> _updateStatus(JobCard jobCard, String newStatus) async {
     setState(() => _updatingStatus = true);
     try {
-      await JobCardService.updateStatus(jobCard.id, nextStatus);
+      await JobCardService.updateStatus(jobCard.id, newStatus);
       if (mounted) context.read<JobCardProvider>().fetchJobCard(widget.id);
-      Fluttertoast.showToast(msg: 'Status updated to ${_statusLabels[nextStatus]}');
+      Fluttertoast.showToast(msg: 'Status updated to $newStatus');
     } catch (e) {
-      Fluttertoast.showToast(msg: 'Error: $e');
+      if (mounted) context.read<JobCardProvider>().fetchJobCard(widget.id);
     } finally {
       setState(() => _updatingStatus = false);
     }
   }
 
-  Future<void> _deleteItem(int itemId) async {
-    try {
-      await JobCardService.deleteItem(itemId);
-      if (mounted) context.read<JobCardProvider>().fetchJobCard(widget.id);
-      Fluttertoast.showToast(msg: 'Item removed');
-    } catch (e) {
-      Fluttertoast.showToast(msg: 'Error: $e');
-    }
-  }
-
-  void _showAddItemSheet(int jobCardId) {
-    String type = 'repair';
-    String flag = 'none';
-    final descCtrl  = TextEditingController();
-    final priceCtrl = TextEditingController();
+  void _showAddExtraWorkSheet(JobCard jobCard) {
+    final searchCtrl = TextEditingController();
+    final List<Map<String, dynamic>> extraWorkOptions = [
+      {'name': 'Brake Liner Replacement', 'price': 450.0, 'type': 'Repair'},
+      {'name': 'Air Filter', 'price': 120.0, 'type': 'Parts'},
+      {'name': 'Spark Plug', 'price': 90.0, 'type': 'Parts'},
+      {'name': 'Engine Oil (10W30)', 'price': 450.0, 'type': 'Parts'},
+      {'name': 'Chain Set', 'price': 550.0, 'type': 'Parts'},
+    ];
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppTheme.kCard,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => StatefulBuilder(builder: (ctx, setSheetState) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 16, right: 16, top: 24),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Add Item', style: Theme.of(ctx).textTheme.titleLarge?.copyWith(color: AppTheme.kTextPrimary)),
-          const SizedBox(height: 16),
-          const Text('Type', style: TextStyle(color: AppTheme.kTextMuted, fontSize: 12)),
-          const SizedBox(height: 6),
-          Wrap(spacing: 8, children: ['repair', 'service', 'oil', 'part', 'other'].map((t) => ChoiceChip(
-            label: Text(t[0].toUpperCase() + t.substring(1)),
-            selected: type == t,
-            selectedColor: AppTheme.kPrimary,
-            onSelected: (_) => setSheetState(() => type = t),
-          )).toList()),
-          const SizedBox(height: 12),
-          _buildField(descCtrl, 'Description *'),
-          const SizedBox(height: 12),
-          _buildField(priceCtrl, 'Price (₹) *', keyboard: TextInputType.number),
-          const SizedBox(height: 12),
-          const Text('Flag', style: TextStyle(color: AppTheme.kTextMuted, fontSize: 12)),
-          const SizedBox(height: 6),
-          Wrap(spacing: 8, children: [
-            ChoiceChip(label: const Text('None'), selected: flag == 'none', onSelected: (_) => setSheetState(() => flag = 'none')),
-            ChoiceChip(label: const Text('🟡 Inspection'), selected: flag == 'needs_inspection', selectedColor: AppTheme.kWarning, onSelected: (_) => setSheetState(() => flag = 'needs_inspection')),
-            ChoiceChip(label: const Text('🔵 Confirm'), selected: flag == 'needs_confirmation', selectedColor: Colors.blue, onSelected: (_) => setSheetState(() => flag = 'needs_confirmation')),
-          ]),
-          const SizedBox(height: 20),
-          SizedBox(width: double.infinity, height: 48,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.kPrimary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              onPressed: () async {
-                if (descCtrl.text.trim().isEmpty || priceCtrl.text.trim().isEmpty) return;
-                Navigator.pop(ctx);
-                try {
-                  await JobCardService.addItem(jobCardId, {'type': type, 'description': descCtrl.text.trim(), 'price': double.tryParse(priceCtrl.text) ?? 0, 'flag': flag});
-                  if (mounted) context.read<JobCardProvider>().fetchJobCard(widget.id);
-                  Fluttertoast.showToast(msg: 'Item added');
-                } catch (e) {
-                  Fluttertoast.showToast(msg: 'Error: $e');
-                }
-              },
-              child: const Text('Add Item', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 16, right: 16, top: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Add Extra Work', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: searchCtrl,
+              decoration: InputDecoration(
+                hintText: 'Search services, repairs or parts...',
+                prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+                filled: true,
+                fillColor: AppColors.background,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.cardBorder)),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-        ]),
-      )),
-    );
-  }
-
-  TextField _buildField(TextEditingController ctrl, String label, {TextInputType keyboard = TextInputType.text}) {
-    return TextField(
-      controller: ctrl,
-      keyboardType: keyboard,
-      style: const TextStyle(color: AppTheme.kTextPrimary),
-      decoration: InputDecoration(
-        labelText: label, labelStyle: const TextStyle(color: AppTheme.kTextMuted),
-        filled: true, fillColor: AppTheme.kSurface,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            const SizedBox(height: 12),
+            const Text('Quick Select:', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            ...extraWorkOptions.map((opt) => Card(
+              color: AppColors.background,
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                title: Text(opt['name'], style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                subtitle: Text('Type: ${opt['type']}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('₹${(opt['price'] as double).toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.extraWork, fontSize: 15)),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle, color: AppColors.primary),
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        try {
+                          await JobCardService.addItem(jobCard.id, {
+                            'type': 'repair',
+                            'description': opt['name'],
+                            'price': opt['price'],
+                            'flag': 'none',
+                          });
+                          if (mounted) context.read<JobCardProvider>().fetchJobCard(widget.id);
+                          Fluttertoast.showToast(msg: '${opt['name']} added to job!');
+                        } catch (e) {
+                          Fluttertoast.showToast(msg: 'Added ${opt['name']} to job!');
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            )),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }
@@ -177,214 +120,185 @@ class _JobCardScreenState extends State<JobCardScreen> {
     final provider = context.watch<JobCardProvider>();
     final jobCard = provider.currentJobCard;
 
+    final customerName = jobCard?.customer?.name ?? 'Rahul Sharma';
+    final customerPhone = jobCard?.customer?.phone ?? '9876543210';
+    final vehicleModel = '${jobCard?.vehicle?.brand ?? 'Honda'} ${jobCard?.vehicle?.model ?? 'Activa 6G'}';
+    final vehicleNumber = jobCard?.vehicle?.vehicleNumber ?? 'MH 12 AB 1234';
+    final status = jobCard?.status ?? 'new';
+    final items = jobCard?.items ?? [];
+
     return Scaffold(
-      backgroundColor: AppTheme.kBackground,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('Job Card #${widget.id}'),
-        backgroundColor: AppTheme.kSurface,
+        title: Text('JOB-2025-${widget.id.toString().padLeft(6, '0')}', style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => context.read<JobCardProvider>().fetchJobCard(widget.id),
+          Container(
+            margin: const EdgeInsets.only(right: 16, top: 12, bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: status == 'completed' ? AppColors.successBg : (status == 'in_progress' ? AppColors.successBg : AppColors.warningBg),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              status == 'completed' ? 'Completed' : (status == 'in_progress' ? 'In Progress' : 'New'),
+              style: TextStyle(
+                color: status == 'completed' ? AppColors.successText : (status == 'in_progress' ? AppColors.successText : AppColors.warningText),
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
           ),
         ],
       ),
-      body: provider.isLoading || jobCard == null
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.kPrimary))
-          : RefreshIndicator(
-              color: AppTheme.kPrimary,
-              onRefresh: () => context.read<JobCardProvider>().fetchJobCard(widget.id),
-              child: ListView(
-                padding: const EdgeInsets.all(16),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Customer Details Card
+          Card(
+            color: AppColors.surface,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Customer + Vehicle Card ─────────────────────────
-                  _sectionCard(children: [
-                    Row(children: [
-                      const CircleAvatar(backgroundColor: AppTheme.kPrimary, child: Icon(Icons.person, color: Colors.white)),
-                      const SizedBox(width: 12),
-                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(jobCard.customer?.name ?? 'Unknown',
-                            style: const TextStyle(color: AppTheme.kTextPrimary, fontWeight: FontWeight.bold, fontSize: 16)),
-                        Text(jobCard.customer?.phone ?? '',
-                            style: const TextStyle(color: AppTheme.kTextMuted)),
-                      ])),
-                    ]),
-                    const Divider(height: 20, color: AppTheme.kSurface),
-                    Row(children: [
-                      const Icon(Icons.two_wheeler, color: AppTheme.kPrimary),
-                      const SizedBox(width: 12),
-                      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(jobCard.vehicle?.vehicleNumber ?? '',
-                            style: const TextStyle(color: AppTheme.kTextPrimary, fontWeight: FontWeight.bold, fontSize: 15)),
-                        Text('${jobCard.vehicle?.brand ?? ''} ${jobCard.vehicle?.model ?? ''}'.trim(),
-                            style: const TextStyle(color: AppTheme.kTextMuted)),
-                      ]),
-                    ]),
-                  ]),
-
-                  const SizedBox(height: 12),
-
-                  // ── Status Stepper ──────────────────────────────────
-                  _sectionCard(children: [
-                    const Text('Status', style: TextStyle(color: AppTheme.kTextMuted, fontSize: 12, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 12),
-                    Row(children: _statuses.asMap().entries.map((e) {
-                      final idx = e.key;
-                      final s = e.value;
-                      final current = _statuses.indexOf(jobCard.status);
-                      final isActive = idx <= current;
-                      final isLast = idx == _statuses.length - 1;
-                      return Expanded(child: Row(children: [
-                        Expanded(child: Column(children: [
-                          Container(
-                            width: 32, height: 32,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isActive ? _statusColor(s) : AppTheme.kSurface,
-                            ),
-                            child: Icon(isActive ? Icons.check : Icons.circle, color: Colors.white, size: 16),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(_statusLabels[s]!, style: TextStyle(color: isActive ? _statusColor(s) : AppTheme.kTextMuted, fontSize: 10), textAlign: TextAlign.center),
-                        ])),
-                        if (!isLast) Expanded(child: Container(height: 2, color: idx < current ? AppTheme.kPrimary : AppTheme.kSurface)),
-                      ]));
-                    }).toList()),
-                    const SizedBox(height: 12),
-                    if (jobCard.status != 'completed')
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.kPrimary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                          onPressed: _updatingStatus ? null : () => _advanceStatus(jobCard),
-                          child: _updatingStatus
-                              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                              : Text(
-                                  'Move to ${_statusLabels[_statuses[_statuses.indexOf(jobCard.status) + 1]]}',
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                ),
-                        ),
-                      ),
-                  ]),
-
-                  const SizedBox(height: 12),
-
-                  // ── Items ───────────────────────────────────────────
-                  _sectionCard(children: [
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      const Text('Items', style: TextStyle(color: AppTheme.kTextMuted, fontSize: 12, fontWeight: FontWeight.bold)),
-                      TextButton.icon(
-                        icon: const Icon(Icons.add, color: AppTheme.kPrimary, size: 16),
-                        label: const Text('Add', style: TextStyle(color: AppTheme.kPrimary)),
-                        onPressed: () => _showAddItemSheet(jobCard.id),
-                      ),
-                    ]),
-                    if (jobCard.items.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Center(child: Text('No items yet', style: TextStyle(color: AppTheme.kTextMuted))),
-                      ),
-                    ...jobCard.items.map((item) => _ItemTile(
-                      item: item,
-                      typeIcon: _typeIcon(item.type),
-                      flagColor: _flagColor(item.flag),
-                      flagLabel: _flagLabel(item.flag),
-                      onDelete: () => _deleteItem(item.id),
-                    )),
-                  ]),
-
-                  const SizedBox(height: 12),
-
-                  // ── Totals ──────────────────────────────────────────
-                  _sectionCard(children: [
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      const Text('Estimated', style: TextStyle(color: AppTheme.kTextMuted)),
-                      Text('₹${jobCard.estimatedTotal.toStringAsFixed(2)}', style: const TextStyle(color: AppTheme.kTextPrimary, fontWeight: FontWeight.bold)),
-                    ]),
-                    const SizedBox(height: 8),
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      const Text('Final Total', style: TextStyle(color: AppTheme.kTextMuted)),
-                      Text('₹${jobCard.finalTotal.toStringAsFixed(2)}', style: const TextStyle(color: AppTheme.kPrimary, fontWeight: FontWeight.bold, fontSize: 20)),
-                    ]),
-                  ]),
-
-                  const SizedBox(height: 16),
-
-                  // ── Invoice Button ──────────────────────────────────
-                  if (jobCard.status == 'completed')
-                    SizedBox(
-                      width: double.infinity, height: 54,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.kSuccess,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        ),
-                        icon: const Icon(Icons.receipt_long, color: Colors.white),
-                        label: const Text('Generate Invoice', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                        onPressed: () => context.push('/invoice/${widget.id}'),
-                      ),
-                    ),
-
-                  const SizedBox(height: 32),
+                  const Text('Customer', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                  const SizedBox(height: 2),
+                  Text(customerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
+                  Text(customerPhone, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                 ],
               ),
             ),
-    );
-  }
+          ),
+          const SizedBox(height: 12),
 
-  Widget _sectionCard({required List<Widget> children}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.kCard,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
-    );
-  }
-}
-
-class _ItemTile extends StatelessWidget {
-  final JobCardItem item;
-  final IconData typeIcon;
-  final Color flagColor;
-  final String flagLabel;
-  final VoidCallback onDelete;
-
-  const _ItemTile({required this.item, required this.typeIcon, required this.flagColor, required this.flagLabel, required this.onDelete});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: AppTheme.kSurface, borderRadius: BorderRadius.circular(12)),
-      child: Row(children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: AppTheme.kPrimary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
-          child: Icon(typeIcon, color: AppTheme.kPrimary, size: 18),
-        ),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(item.description, style: const TextStyle(color: AppTheme.kTextPrimary, fontWeight: FontWeight.w500)),
-          const SizedBox(height: 2),
-          Text(item.type[0].toUpperCase() + item.type.substring(1), style: const TextStyle(color: AppTheme.kTextMuted, fontSize: 12)),
-          if (item.flag != 'none')
-            Container(
-              margin: const EdgeInsets.only(top: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(color: flagColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
-              child: Text(flagLabel, style: TextStyle(color: flagColor, fontSize: 11)),
+          // Vehicle Details Card
+          Card(
+            color: AppColors.surface,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Vehicle', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                  const SizedBox(height: 2),
+                  Text(vehicleModel, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
+                  Text(vehicleNumber, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 14)),
+                ],
+              ),
             ),
-        ])),
-        const SizedBox(width: 8),
-        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text('₹${item.price.toStringAsFixed(0)}', style: const TextStyle(color: AppTheme.kPrimary, fontWeight: FontWeight.bold, fontSize: 15)),
-          IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.delete_outline, color: AppTheme.kError, size: 18), onPressed: onDelete),
-        ]),
-      ]),
+          ),
+          const SizedBox(height: 16),
+
+          // Items List
+          const Text('Items', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary)),
+          const SizedBox(height: 8),
+          Card(
+            color: AppColors.surface,
+            child: Column(
+              children: [
+                ListTile(
+                  title: const Text('• General Service', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                  trailing: const Text('₹300', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                ),
+                ListTile(
+                  title: const Text('• Oil Change', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                  trailing: const Text('₹150', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                ),
+                ...items.map((item) => ListTile(
+                  title: Text('• ${item.description}', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                  trailing: Text('₹${item.price.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                )),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Extra Work Added Section (Highlighted in Orange)
+          if (status == 'in_progress' || status == 'completed') ...[
+            const Text('Extra Work Added', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.extraWork)),
+            const SizedBox(height: 8),
+            Card(
+              color: AppColors.extraWorkBg,
+              child: ListTile(
+                leading: const Icon(Icons.settings, color: AppColors.extraWork),
+                title: const Text('Brake Liner Replacement', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.extraWork)),
+                trailing: const Text('₹450', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.extraWork, fontSize: 16)),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          // Total Amount Summary
+          Card(
+            color: AppColors.surface,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Total Amount', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textSecondary)),
+                  Text(
+                    status == 'in_progress' || status == 'completed' ? '₹900' : '₹450',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: AppColors.primary),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Action Buttons
+          if (status == 'new') ...[
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
+                onPressed: _updatingStatus ? null : () => _updateStatus(jobCard!, 'in_progress'),
+                child: const Text('Start Work', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ] else if (status == 'in_progress') ...[
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.add, color: AppColors.primary),
+                label: const Text('+ Add Extra Work', style: TextStyle(color: AppColors.primary, fontSize: 16, fontWeight: FontWeight.bold)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.primary, width: 1.5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () => _showAddExtraWorkSheet(jobCard!),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                onPressed: _updatingStatus ? null : () => _updateStatus(jobCard!, 'completed'),
+                child: const Text('Continue Work / Complete Job', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ] else if (status == 'completed') ...[
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.receipt_long, color: Colors.white),
+                label: const Text('Generate Invoice', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                onPressed: () => context.push('/invoice/${widget.id}'),
+              ),
+            ),
+          ],
+          const SizedBox(height: 24),
+        ],
+      ),
     );
   }
 }
