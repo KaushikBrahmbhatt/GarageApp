@@ -15,6 +15,8 @@ class DashboardProvider extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
   String get error => _error;
+  int get newJobs => todayJobs;
+  int get doneJobs => awaitingConfirmation;
 
   Future<void> fetchDashboardStats() async {
     _isLoading = true;

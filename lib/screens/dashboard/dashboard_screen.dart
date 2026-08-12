@@ -92,11 +92,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             // 3 Dynamic Stat Cards Row
             Row(
               children: [
-                Expanded(child: _buildStatCard(provider.todayJobs.toString(), 'New Jobs', AppColors.primary, AppColors.primaryLight)),
+                Expanded(child: _buildStatCard(provider.newJobs.toString(), 'New Jobs', AppColors.primary, AppColors.primaryLight)),
                 const SizedBox(width: 8),
                 Expanded(child: _buildStatCard(provider.inProgress.toString(), 'Working', AppColors.warningText, AppColors.warningBg)),
                 const SizedBox(width: 8),
-                Expanded(child: _buildStatCard(provider.awaitingConfirmation.toString(), 'Done', AppColors.successText, AppColors.successBg)),
+                Expanded(child: _buildStatCard(provider.doneJobs.toString(), 'Done', AppColors.successText, AppColors.successBg)),
               ],
             ),
             const SizedBox(height: 16),
