@@ -4,8 +4,6 @@ import '../screens/main_shell_screen.dart';
 import '../screens/new_job/new_job_screen.dart';
 import '../screens/job_card/job_card_screen.dart';
 import '../screens/invoice/invoice_screen.dart';
-import '../screens/history/history_screen.dart';
-import '../screens/settings/settings_screen.dart';
 
 class AppRouter {
   static GoRouter getRouter(String? token) {

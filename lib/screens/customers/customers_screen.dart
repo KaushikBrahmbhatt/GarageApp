@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
 import '../../models/customer.dart';
-import '../../services/customer_service.dart';
-import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
 
 class CustomersScreen extends StatefulWidget {
   const CustomersScreen({super.key});
@@ -14,7 +11,7 @@ class CustomersScreen extends StatefulWidget {
 
 class _CustomersScreenState extends State<CustomersScreen> {
   final _searchCtrl = TextEditingController();
-  List<Customer> _customers = [
+  final List<Customer> _customers = [
     Customer(id: 1, name: 'Rahul Sharma', phone: '9876543210', email: 'rahul@gmail.com', vehicles: []),
     Customer(id: 2, name: 'Amit Patel', phone: '9876512340', email: 'amit@gmail.com', vehicles: []),
     Customer(id: 3, name: 'Vijay Joshi', phone: '9812545678', email: 'vijay@gmail.com', vehicles: []),
@@ -22,7 +19,11 @@ class _CustomersScreenState extends State<CustomersScreen> {
     Customer(id: 5, name: 'Pooja Singh', phone: '9765432190', email: 'pooja@gmail.com', vehicles: []),
   ];
 
-  String get _token => context.read<AuthProvider>().token ?? '';
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
