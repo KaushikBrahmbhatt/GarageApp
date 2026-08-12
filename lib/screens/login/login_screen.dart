@@ -61,10 +61,10 @@ class _LoginScreenState extends State<LoginScreen> {
             onPressed: () async {
               await ApiConfig.setBaseUrl(urlCtrl.text.trim());
               if (ctx.mounted) {
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
+                ScaffoldMessenger.of(ctx).showSnackBar(
                   const SnackBar(content: Text('API Server URL updated!')),
                 );
+                Navigator.pop(ctx);
               }
             },
             child: const Text('Save', style: TextStyle(color: Colors.white)),
