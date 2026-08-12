@@ -9,7 +9,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 
 class JobCardScreen extends StatefulWidget {
   final int id;
-  const JobCardScreen({super.key, required this.id});
+  const JobCardScreen({super.key});
 
   @override
   State<JobCardScreen> createState() => _JobCardScreenState();
@@ -31,7 +31,7 @@ class _JobCardScreenState extends State<JobCardScreen> {
     try {
       await JobCardService.updateStatus(jobCard.id, newStatus);
       if (mounted) context.read<JobCardProvider>().fetchJobCard(widget.id);
-      Fluttertoast.showToast(msg: 'Status updated to $newStatus');
+      Fluttertoast.showToast(msg: 'Job marked as $newStatus');
     } catch (e) {
       if (mounted) context.read<JobCardProvider>().fetchJobCard(widget.id);
     } finally {
@@ -191,23 +191,23 @@ class _JobCardScreenState extends State<JobCardScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Items List
-          const Text('Items', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary)),
+          // Customer Request Items
+          const Text('Customer Request', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary)),
           const SizedBox(height: 8),
           Card(
             color: AppColors.surface,
             child: Column(
               children: [
-                ListTile(
-                  title: const Text('• General Service', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                  trailing: const Text('₹300', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                const ListTile(
+                  title: Text('✓ General Service', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                  trailing: Text('₹300', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                 ),
-                ListTile(
-                  title: const Text('• Oil Change', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                  trailing: const Text('₹150', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                const ListTile(
+                  title: Text('✓ Oil Change', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                  trailing: Text('₹150', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                 ),
                 ...items.map((item) => ListTile(
-                  title: Text('• ${item.description}', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                  title: Text('✓ ${item.description}', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                   trailing: Text('₹${item.price.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                 )),
               ],
@@ -221,10 +221,10 @@ class _JobCardScreenState extends State<JobCardScreen> {
             const SizedBox(height: 8),
             Card(
               color: AppColors.extraWorkBg,
-              child: ListTile(
-                leading: const Icon(Icons.settings, color: AppColors.extraWork),
-                title: const Text('Brake Liner Replacement', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.extraWork)),
-                trailing: const Text('₹450', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.extraWork, fontSize: 16)),
+              child: const ListTile(
+                leading: Icon(Icons.settings, color: AppColors.extraWork),
+                title: Text('Brake Liner Replacement', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.extraWork)),
+                trailing: Text('₹450', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.extraWork, fontSize: 16)),
               ),
             ),
             const SizedBox(height: 12),
@@ -249,18 +249,20 @@ class _JobCardScreenState extends State<JobCardScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Action Buttons
-          if (status == 'new') ...[
+          // Action Buttons: "+ Add Extra Work" AND "Complete Job"
+          if (status == 'completed') ...[
             SizedBox(
               width: double.infinity,
               height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
-                onPressed: _updatingStatus ? null : () => _updateStatus(jobCard!, 'in_progress'),
-                child: const Text('Start Work', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.receipt_long, color: Colors.white),
+                label: const Text('Generate Invoice', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                onPressed: () => context.push('/invoice/${widget.id}'),
               ),
             ),
-          ] else if (status == 'in_progress') ...[
+          ] else ...[
+            // Button 1: + Add Extra Work
             SizedBox(
               width: double.infinity,
               height: 48,
@@ -271,28 +273,22 @@ class _JobCardScreenState extends State<JobCardScreen> {
                   side: const BorderSide(color: AppColors.primary, width: 1.5),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                onPressed: () => _showAddExtraWorkSheet(jobCard!),
+                onPressed: () => _showAddExtraWorkSheet(jobCard ?? JobCard(id: widget.id, garageId: 1, customerId: 1, vehicleId: 1, status: 'new', estimatedTotal: 450, finalTotal: 450, createdAt: DateTime.now(), updatedAt: DateTime.now(), items: [])),
               ),
             ),
             const SizedBox(height: 12),
+            // Button 2: Complete Job
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                onPressed: _updatingStatus ? null : () => _updateStatus(jobCard!, 'completed'),
-                child: const Text('Continue Work / Complete Job', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-              ),
-            ),
-          ] else if (status == 'completed') ...[
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.receipt_long, color: Colors.white),
-                label: const Text('Generate Invoice', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                onPressed: () => context.push('/invoice/${widget.id}'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
+                onPressed: _updatingStatus
+                    ? null
+                    : () => _updateStatus(jobCard ?? JobCard(id: widget.id, garageId: 1, customerId: 1, vehicleId: 1, status: 'new', estimatedTotal: 450, finalTotal: 450, createdAt: DateTime.now(), updatedAt: DateTime.now(), items: []), 'completed'),
+                child: _updatingStatus
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Complete Job ✓', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
