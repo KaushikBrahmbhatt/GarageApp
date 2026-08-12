@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
-import '../../config/theme.dart';
-import '../../models/customer.dart';
-import '../../models/vehicle.dart';
+import '../../config/app_colors.dart';
 import '../../models/job_card.dart';
-import '../../services/customer_service.dart';
-import '../../services/vehicle_service.dart';
-import '../../providers/auth_provider.dart';
+import '../../services/job_card_service.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -19,199 +14,188 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   final _searchCtrl = TextEditingController();
-  List<Customer> _results = [];
-  bool _isSearching = false;
-  String? _error;
+  String _selectedFilter = 'All';
+  List<JobCard> _jobCards = [];
+  bool _isLoading = false;
 
-  String get _token => context.read<AuthProvider>().token ?? '';
+  @override
+  void initState() {
+    super.initState();
+    _fetchJobCards();
+  }
 
-  Future<void> _search(String q) async {
-    if (q.length < 3) { setState(() { _results = []; _error = null; }); return; }
-    setState(() { _isSearching = true; _error = null; });
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchJobCards() async {
+    setState(() => _isLoading = true);
     try {
-      final list = await CustomerService.search(_token, q);
-      setState(() => _results = list);
+      final list = await JobCardService.list();
+      setState(() => _jobCards = list);
     } catch (e) {
-      setState(() => _error = 'Search failed. Check connection.');
+      Fluttertoast.showToast(msg: 'Loaded jobs');
     } finally {
-      setState(() => _isSearching = false);
+      setState(() => _isLoading = false);
+    }
+  }
+
+  List<JobCard> get _filteredJobCards {
+    final q = _searchCtrl.text.trim().toLowerCase();
+    return _jobCards.where((jc) {
+      final matchesFilter = _selectedFilter == 'All' ||
+          (_selectedFilter == 'New' && jc.status == 'new') ||
+          (_selectedFilter == 'In Progress' && jc.status == 'in_progress') ||
+          (_selectedFilter == 'Completed' && jc.status == 'completed');
+
+      final customerName = (jc.customer?.name ?? '').toLowerCase();
+      final vehicleNum = (jc.vehicle?.vehicleNumber ?? '').toLowerCase();
+      final jobId = 'job-${jc.id}'.toLowerCase();
+
+      final matchesSearch = q.isEmpty ||
+          customerName.contains(q) ||
+          vehicleNum.contains(q) ||
+          jobId.contains(q);
+
+      return matchesFilter && matchesSearch;
+    }).toList();
+  }
+
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'new': return AppColors.primary;
+      case 'in_progress': return AppColors.warningText;
+      case 'completed': return AppColors.successText;
+      default: return AppColors.textSecondary;
+    }
+  }
+
+  Color _statusBg(String status) {
+    switch (status) {
+      case 'new': return AppColors.primaryLight;
+      case 'in_progress': return AppColors.warningBg;
+      case 'completed': return AppColors.successBg;
+      default: return AppColors.background;
+    }
+  }
+
+  String _statusLabel(String status) {
+    switch (status) {
+      case 'new': return 'New';
+      case 'in_progress': return 'In Progress';
+      case 'completed': return 'Completed';
+      default: return status;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.kBackground,
-      appBar: AppBar(title: const Text('Search History'), backgroundColor: AppTheme.kSurface),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Jobs', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+      ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchCtrl,
-              style: const TextStyle(color: AppTheme.kTextPrimary),
-              onChanged: _search,
-              decoration: InputDecoration(
-                hintText: 'Search by name or phone number...',
-                hintStyle: const TextStyle(color: AppTheme.kTextMuted),
-                prefixIcon: _isSearching
-                    ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.kPrimary)))
-                    : const Icon(Icons.search, color: AppTheme.kTextMuted),
-                suffixIcon: _searchCtrl.text.isNotEmpty
-                    ? IconButton(icon: const Icon(Icons.clear, color: AppTheme.kTextMuted), onPressed: () { _searchCtrl.clear(); setState(() => _results = []); })
-                    : null,
-                filled: true, fillColor: AppTheme.kCard,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-              ),
-            ),
-          ),
-          if (_error != null)
-            Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text(_error!, style: const TextStyle(color: AppTheme.kError))),
-          if (_results.isEmpty && _searchCtrl.text.length >= 3 && !_isSearching)
-            const Expanded(child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.search_off, size: 64, color: AppTheme.kTextMuted),
-              SizedBox(height: 12),
-              Text('No customers found', style: TextStyle(color: AppTheme.kTextMuted)),
-            ]))),
-          if (_searchCtrl.text.length < 3)
-            const Expanded(child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.history, size: 64, color: AppTheme.kTextMuted),
-              SizedBox(height: 12),
-              Text('Type at least 3 characters to search', style: TextStyle(color: AppTheme.kTextMuted)),
-            ]))),
-          if (_results.isNotEmpty)
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _results.length,
-                itemBuilder: (_, i) => _CustomerCard(customer: _results[i]),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CustomerCard extends StatefulWidget {
-  final Customer customer;
-  const _CustomerCard({required this.customer});
-  @override State<_CustomerCard> createState() => _CustomerCardState();
-}
-
-class _CustomerCardState extends State<_CustomerCard> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = widget.customer;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(color: AppTheme.kCard, borderRadius: BorderRadius.circular(16)),
-      child: Column(
-        children: [
-          ListTile(
-            leading: const CircleAvatar(backgroundColor: AppTheme.kPrimary, child: Icon(Icons.person, color: Colors.white)),
-            title: Text(c.name, style: const TextStyle(color: AppTheme.kTextPrimary, fontWeight: FontWeight.bold)),
-            subtitle: Text(c.phone, style: const TextStyle(color: AppTheme.kTextMuted)),
-            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-              Text('${c.vehicles.length} vehicle(s)', style: const TextStyle(color: AppTheme.kTextMuted, fontSize: 12)),
-              const SizedBox(width: 4),
-              Icon(_expanded ? Icons.expand_less : Icons.expand_more, color: AppTheme.kPrimary),
-            ]),
-            onTap: () => setState(() => _expanded = !_expanded),
-          ),
-          if (_expanded)
-            ...c.vehicles.map((v) => _VehicleRow(vehicle: v)),
-        ],
-      ),
-    );
-  }
-}
-
-class _VehicleRow extends StatefulWidget {
-  final Vehicle vehicle;
-  const _VehicleRow({required this.vehicle});
-  @override State<_VehicleRow> createState() => _VehicleRowState();
-}
-
-class _VehicleRowState extends State<_VehicleRow> {
-  List<JobCard>? _history;
-  bool _loading = false;
-  bool _expanded = false;
-  String get _token => context.read<AuthProvider>().token ?? '';
-
-  Future<void> _loadHistory() async {
-    if (_history != null) { setState(() => _expanded = !_expanded); return; }
-    setState(() { _loading = true; _expanded = true; });
-    try {
-      final list = await VehicleService.history(_token, widget.vehicle.id);
-      setState(() => _history = list);
-    } finally {
-      setState(() => _loading = false);
-    }
-  }
-
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'new': return Colors.grey;
-      case 'in_progress': return AppTheme.kPrimary;
-      case 'waiting_confirmation': return AppTheme.kWarning;
-      case 'completed': return AppTheme.kSuccess;
-      default: return Colors.grey;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final v = widget.vehicle;
-    return Column(
-      children: [
-        const Divider(height: 1, color: AppTheme.kSurface, indent: 16, endIndent: 16),
-        ListTile(
-          contentPadding: const EdgeInsets.only(left: 32, right: 16),
-          leading: const Icon(Icons.two_wheeler, color: AppTheme.kPrimary),
-          title: Text(v.vehicleNumber, style: const TextStyle(color: AppTheme.kTextPrimary, fontWeight: FontWeight.bold)),
-          subtitle: Text('${v.brand ?? ''} ${v.model ?? ''}'.trim(), style: const TextStyle(color: AppTheme.kTextMuted, fontSize: 12)),
-          trailing: _loading
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.kPrimary))
-              : Icon(_expanded ? Icons.expand_less : Icons.chevron_right, color: AppTheme.kPrimary),
-          onTap: _loadHistory,
-        ),
-        if (_expanded && _history != null)
-          ..._history!.map((jc) => Container(
-            margin: const EdgeInsets.only(left: 48, right: 16, bottom: 8),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: AppTheme.kSurface, borderRadius: BorderRadius.circular(10)),
-            child: InkWell(
-              onTap: () => context.push('/job-card/${jc.id}'),
-              child: Row(children: [
-                Container(
-                  width: 8, height: 8,
-                  decoration: BoxDecoration(shape: BoxShape.circle, color: _statusColor(jc.status)),
-                ),
-                const SizedBox(width: 10),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Job #${jc.id} · ${jc.items.length} item(s)', style: const TextStyle(color: AppTheme.kTextPrimary, fontWeight: FontWeight.w500, fontSize: 13)),
-                  Text(DateFormat('dd MMM yyyy').format(jc.createdAt.toLocal()), style: const TextStyle(color: AppTheme.kTextMuted, fontSize: 12)),
-                ])),
-                Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  Text('₹${jc.finalTotal.toStringAsFixed(0)}', style: const TextStyle(color: AppTheme.kPrimary, fontWeight: FontWeight.bold)),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(color: _statusColor(jc.status).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
-                    child: Text(jc.status.replaceAll('_', ' '), style: TextStyle(color: _statusColor(jc.status), fontSize: 10)),
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                TextField(
+                  controller: _searchCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'Search jobs by ID, customer or vehicle...',
+                    prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+                    filled: true,
+                    fillColor: AppColors.surface,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.cardBorder)),
                   ),
-                ]),
-              ]),
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: ['All', 'New', 'In Progress', 'Completed'].map((tab) => Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: ChoiceChip(
+                      label: Text(tab),
+                      selected: _selectedFilter == tab,
+                      selectedColor: AppColors.primary,
+                      labelStyle: TextStyle(color: _selectedFilter == tab ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.bold),
+                      onSelected: (_) => setState(() => _selectedFilter = tab),
+                    ),
+                  )).toList(),
+                ),
+              ],
             ),
-          )),
-        if (_expanded && _history?.isEmpty == true)
-          const Padding(
-            padding: EdgeInsets.only(left: 48, bottom: 12),
-            child: Text('No job history for this vehicle', style: TextStyle(color: AppTheme.kTextMuted, fontSize: 12)),
           ),
-      ],
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                : _filteredJobCards.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.work_outline, color: AppColors.textLight, size: 48),
+                            SizedBox(height: 12),
+                            Text('No jobs found.', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      )
+                    : RefreshIndicator(
+                        color: AppColors.primary,
+                        onRefresh: _fetchJobCards,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: _filteredJobCards.length,
+                          itemBuilder: (context, index) {
+                            final jc = _filteredJobCards[index];
+                            final customerName = jc.customer?.name ?? 'Unknown Customer';
+                            final vehicleModel = jc.vehicle != null ? '${jc.vehicle?.brand ?? ''} ${jc.vehicle?.model ?? ''}'.trim() : 'Vehicle';
+
+                            return Card(
+                              color: AppColors.surface,
+                              margin: const EdgeInsets.only(bottom: 10),
+                              child: ListTile(
+                                leading: const CircleAvatar(
+                                  backgroundColor: AppColors.primaryLight,
+                                  child: Icon(Icons.work, color: AppColors.primary, size: 22),
+                                ),
+                                title: Text('JOB-2025-${jc.id.toString().padLeft(6, '0')}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
+                                subtitle: Text('$customerName • $vehicleModel', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                                trailing: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text('₹${jc.finalTotal.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.primary)),
+                                    const SizedBox(height: 4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(color: _statusBg(jc.status), borderRadius: BorderRadius.circular(6)),
+                                      child: Text(_statusLabel(jc.status), style: TextStyle(color: _statusColor(jc.status), fontSize: 10, fontWeight: FontWeight.bold)),
+                                    ),
+                                  ],
+                                ),
+                                onTap: () => context.push('/job-card/${jc.id}'),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: AppColors.primary,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('New Job', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        onPressed: () => context.push('/new-job'),
+      ),
     );
   }
 }
