@@ -1,7 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiConfig {
-  static const String defaultBaseUrl = 'http://192.168.1.49:8000/api';
+  static const String defaultBaseUrl = 'https://kaushik-garage.loca.lt/api';
   
   static Future<String> getBaseUrl() async {
     final prefs = await SharedPreferences.getInstance();
