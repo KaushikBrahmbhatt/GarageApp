@@ -5,6 +5,7 @@ import '../../services/customer_service.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import '../../widgets/skeleton_loader.dart';
 
 class CustomersScreen extends StatefulWidget {
   const CustomersScreen({super.key});
@@ -152,7 +153,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
           ),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                ? const SkeletonListLoader()
                 : _customers.isEmpty
                     ? Center(
                         child: Column(

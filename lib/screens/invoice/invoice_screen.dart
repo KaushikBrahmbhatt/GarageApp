@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../config/theme.dart';
 import '../../models/job_card.dart';
 import '../../services/job_card_service.dart';
+import '../../widgets/rpm_gauge_loader.dart';
 
 class InvoiceScreen extends StatefulWidget {
   final int id;
@@ -135,7 +136,16 @@ Thank you for visiting Kaushik Garage! 🙏
         backgroundColor: AppTheme.kSurface,
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.kPrimary))
+          ? const Center(
+              child: RpmGaugeLoader(
+                size: 150.0,
+                statusMessages: [
+                  'Generating invoice',
+                  'Preparing bill details',
+                  'Almost ready',
+                ],
+              ),
+            )
           : _jobCard == null
               ? const Center(child: Text('Could not load invoice', style: TextStyle(color: AppTheme.kTextMuted)))
               : Column(

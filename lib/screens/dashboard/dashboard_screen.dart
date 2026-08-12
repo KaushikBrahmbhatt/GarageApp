@@ -7,6 +7,7 @@ import '../../providers/dashboard_provider.dart';
 import 'widgets/job_card_list_tile.dart';
 
 import 'package:fluttertoast/fluttertoast.dart';
+import '../../widgets/skeleton_loader.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -83,12 +84,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        color: AppColors.primary,
-        onRefresh: () => context.read<DashboardProvider>().fetchDashboardStats(),
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
+      body: provider.isLoading && provider.todayJobCards.isEmpty
+          ? _buildDashboardSkeleton()
+          : RefreshIndicator(
+              color: AppColors.primary,
+              onRefresh: () => context.read<DashboardProvider>().fetchDashboardStats(),
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
             // 3 Dynamic Stat Cards Row
             Row(
               children: [
@@ -180,6 +183,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Text(label, style: TextStyle(color: textColor, fontSize: 12, fontWeight: FontWeight.w600)),
         ],
       ),
+    );
+  }
+
+  Widget _buildDashboardSkeleton() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Row(
+          children: const [
+            Expanded(child: SkeletonBox(height: 70, borderRadius: BorderRadius.all(Radius.circular(14)))),
+            SizedBox(width: 8),
+            Expanded(child: SkeletonBox(height: 70, borderRadius: BorderRadius.all(Radius.circular(14)))),
+            SizedBox(width: 8),
+            Expanded(child: SkeletonBox(height: 70, borderRadius: BorderRadius.all(Radius.circular(14)))),
+          ],
+        ),
+        const SizedBox(height: 16),
+        const SkeletonBox(height: 90, borderRadius: BorderRadius.all(Radius.circular(14))),
+        const SizedBox(height: 20),
+        const SkeletonBox(width: 140, height: 18),
+        const SizedBox(height: 12),
+        const SkeletonListLoader(count: 3),
+      ],
     );
   }
 }

@@ -4,6 +4,7 @@ import '../../config/app_colors.dart';
 import '../../models/job_card.dart';
 import '../../services/job_card_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import '../../widgets/skeleton_loader.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -135,7 +136,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                ? const SkeletonListLoader()
                 : _filteredJobCards.isEmpty
                     ? Center(
                         child: Column(

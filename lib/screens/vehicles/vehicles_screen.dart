@@ -3,6 +3,7 @@ import '../../config/app_colors.dart';
 import '../../models/vehicle.dart';
 import '../../services/customer_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import '../../widgets/skeleton_loader.dart';
 
 class VehiclesScreen extends StatefulWidget {
   const VehiclesScreen({super.key});
@@ -90,7 +91,7 @@ class _VehiclesScreenState extends State<VehiclesScreen> {
           ),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                ? const SkeletonListLoader()
                 : _vehicles.isEmpty
                     ? Center(
                         child: Column(
