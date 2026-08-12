@@ -6,6 +6,8 @@ import '../../providers/auth_provider.dart';
 import '../../providers/dashboard_provider.dart';
 import 'widgets/job_card_list_tile.dart';
 
+import 'package:fluttertoast/fluttertoast.dart';
+
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -20,6 +22,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<DashboardProvider>().fetchDashboardStats();
     });
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text('Logout', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+        content: const Text('Are you sure you want to log out of your account?', style: TextStyle(color: AppColors.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await context.read<AuthProvider>().logout();
+              if (context.mounted) {
+                context.go('/login');
+                Fluttertoast.showToast(msg: 'Logged out successfully');
+              }
+            },
+            child: const Text('Logout', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -44,6 +75,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           IconButton(
             icon: const Icon(Icons.notifications_outlined, color: AppColors.textPrimary),
             onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout, color: AppColors.error),
+            tooltip: 'Logout',
+            onPressed: () => _showLogoutDialog(context),
           ),
         ],
       ),

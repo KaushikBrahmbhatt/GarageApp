@@ -40,14 +40,19 @@ class _CustomersScreenState extends State<CustomersScreen> {
   String get _token => context.read<AuthProvider>().token ?? '';
 
   Future<void> _fetchCustomers([String q = '']) async {
+    final token = _token;
+    if (token.isEmpty) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
     setState(() => _isLoading = true);
     try {
-      final results = await CustomerService.search(_token, q);
-      setState(() => _customers = results);
+      final results = await CustomerService.search(q);
+      if (mounted) setState(() => _customers = results);
     } catch (e) {
-      Fluttertoast.showToast(msg: 'Error loading customers');
+      // Handle gracefully without popping error toast on initial load
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -94,8 +99,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
                           }
                           setSheetState(() => _isSaving = true);
                           try {
-                            await CustomerService.create(_token, _nameCtrl.text.trim(), _phoneCtrl.text.trim(), '');
-                            if (mounted) {
+                            await CustomerService.create(_nameCtrl.text.trim(), _phoneCtrl.text.trim(), '');
+                            if (ctx.mounted) {
                               Navigator.pop(ctx);
                               _fetchCustomers();
                               Fluttertoast.showToast(msg: 'Customer saved successfully!');
@@ -189,7 +194,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
             height: 50,
             child: ElevatedButton.icon(
               icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('+ Add Customer', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              label: const Text('Add Customer', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

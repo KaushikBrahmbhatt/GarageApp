@@ -6,7 +6,6 @@ class VehicleService {
   static final _api = ApiService();
 
   static Future<Vehicle> create(
-    String token,
     int customerId,
     String vehicleNumber,
     String? brand,
@@ -24,7 +23,7 @@ class VehicleService {
     return Vehicle.fromJson(json);
   }
 
-  static Future<List<JobCard>> history(String token, int vehicleId) async {
+  static Future<List<JobCard>> history(int vehicleId) async {
     final data = await _api.get('/vehicles/$vehicleId/history');
     final list = data['data'] as List? ?? data as List? ?? [];
     return list.map((e) => JobCard.fromJson(e)).toList();

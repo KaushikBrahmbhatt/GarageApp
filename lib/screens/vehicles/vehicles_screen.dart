@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
 import '../../models/vehicle.dart';
 import '../../services/customer_service.dart';
-import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class VehiclesScreen extends StatefulWidget {
@@ -30,12 +28,12 @@ class _VehiclesScreenState extends State<VehiclesScreen> {
     super.dispose();
   }
 
-  String get _token => context.read<AuthProvider>().token ?? '';
+
 
   Future<void> _fetchVehicles([String q = '']) async {
     setState(() => _isLoading = true);
     try {
-      final customers = await CustomerService.search(_token, '');
+      final customers = await CustomerService.search('');
       final List<Vehicle> allVehicles = [];
       for (final c in customers) {
         allVehicles.addAll(c.vehicles);

@@ -5,6 +5,8 @@ import '../../providers/auth_provider.dart';
 import '../../config/theme.dart';
 import '../../config/api_config.dart';
 
+import '../../widgets/rpm_gauge_loader.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -18,7 +20,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _login() async {
     final provider = context.read<AuthProvider>();
+    RpmGaugeLoader.show(
+      context,
+      brandName: 'GarageOS',
+      statusMessages: [
+        'Authenticating credentials',
+        'Fetching garage profile',
+        'Loading job cards',
+        'Almost ready',
+      ],
+    );
     final success = await provider.login(_emailCtrl.text, _passCtrl.text);
+    if (mounted) RpmGaugeLoader.hide(context);
+
     if (success) {
       if (mounted) context.go('/dashboard');
     } else {

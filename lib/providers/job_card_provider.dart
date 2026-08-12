@@ -11,14 +11,18 @@ class JobCardProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String get error => _error;
 
-  Future<void> fetchJobCard(int id) async {
-    _isLoading = true;
-    _error = '';
-    notifyListeners();
+  Future<void> fetchJobCard(int id, {bool silent = false}) async {
+    if (!silent) {
+      currentJobCard = null;
+      _isLoading = true;
+      _error = '';
+      notifyListeners();
+    }
 
     try {
       final data = await _api.get('/job-cards/$id');
-      currentJobCard = JobCard.fromJson(data);
+      final json = (data is Map<String, dynamic> && data.containsKey('data')) ? data['data'] : data;
+      currentJobCard = JobCard.fromJson(json);
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -29,6 +33,7 @@ class JobCardProvider extends ChangeNotifier {
   }
 
   Future<bool> updateStatus(int id, String status) async {
+    _error = ''; // BUG-19 fix: clear stale error
     try {
       await _api.patch('/job-cards/$id/status', {'status': status});
       await fetchJobCard(id);
@@ -41,6 +46,7 @@ class JobCardProvider extends ChangeNotifier {
   }
   
   Future<bool> createJobCard(Map<String, dynamic> data) async {
+    _error = ''; // BUG-19 fix: clear stale error
     try {
       await _api.post('/job-cards', data);
       return true;

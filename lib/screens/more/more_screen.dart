@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../config/app_colors.dart';
+import '../../providers/auth_provider.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -81,6 +84,42 @@ class MoreScreen extends StatelessWidget {
             title: 'About App',
             subtitle: 'Garage Management System v1.0.0',
             onTap: () {},
+          ),
+          const Divider(height: 24, color: AppColors.cardBorder),
+          _buildMenuItem(
+            context,
+            icon: Icons.logout,
+            iconColor: AppColors.error,
+            title: 'Logout',
+            subtitle: 'Log out of your garage account',
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: AppColors.surface,
+                  title: const Text('Logout', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+                  content: const Text('Are you sure you want to log out of your account?', style: TextStyle(color: AppColors.textSecondary)),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        await context.read<AuthProvider>().logout();
+                        if (context.mounted) {
+                          context.go('/login');
+                          Fluttertoast.showToast(msg: 'Logged out successfully');
+                        }
+                      },
+                      child: const Text('Logout', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),

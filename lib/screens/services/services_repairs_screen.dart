@@ -92,7 +92,7 @@ class _ServicesRepairsScreenState extends State<ServicesRepairsScreen> {
             height: 50,
             child: ElevatedButton.icon(
               icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('+ Add Service', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              label: const Text('Add Service', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

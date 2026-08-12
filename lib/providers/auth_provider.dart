@@ -7,8 +7,8 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   String _error   = '';
   String? _token;
-  String? _staffName = 'Suresh';
-  String? _garageName = 'Shree Auto Garage';
+  String? _staffName;   // BUG-08 fix: dynamic, not hardcoded
+  String? _garageName;  // BUG-08 fix: dynamic, not hardcoded
 
   bool    get isLoading  => _isLoading;
   String  get error      => _error;
@@ -16,10 +16,12 @@ class AuthProvider extends ChangeNotifier {
   String? get staffName  => _staffName;
   String? get garageName => _garageName;
 
-  /// Call once on app start to restore a saved token.
+  /// Call once on app start to restore a saved token and user info.
   Future<void> restoreSession() async {
     final prefs = await SharedPreferences.getInstance();
-    _token = prefs.getString('token');
+    _token      = prefs.getString('token');
+    _staffName  = prefs.getString('staff_name');   // BUG-08 fix
+    _garageName = prefs.getString('garage_name');  // BUG-08 fix
     notifyListeners();
   }
 
@@ -30,7 +32,13 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final tok = await _authService.login(email, password);
-      _token     = tok;
+      _token = tok;
+
+      // BUG-08 fix: load name/garage from SharedPreferences written by AuthService
+      final prefs = await SharedPreferences.getInstance();
+      _staffName  = prefs.getString('staff_name');
+      _garageName = prefs.getString('garage_name');
+
       _isLoading = false;
       notifyListeners();
       return true;
@@ -42,9 +50,18 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> updateGarageName(String newGarageName) async {
+    _garageName = newGarageName;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('garage_name', newGarageName);
+    notifyListeners();
+  }
+
   Future<void> logout() async {
     await _authService.logout();
-    _token = null;
+    _token      = null;
+    _staffName  = null;
+    _garageName = null;
     notifyListeners();
   }
 }

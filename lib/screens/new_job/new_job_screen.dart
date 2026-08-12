@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../config/app_colors.dart';
 import '../../models/customer.dart';
 import '../../models/vehicle.dart';
 import '../../services/customer_service.dart';
 import '../../services/vehicle_service.dart';
 import '../../services/job_card_service.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/dashboard_provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import '../../widgets/rpm_gauge_loader.dart';
 
 class NewJobScreen extends StatefulWidget {
   const NewJobScreen({super.key});
@@ -38,16 +40,18 @@ class _NewJobScreenState extends State<NewJobScreen> {
     'Brake Liner Replacement': 450.0,
     'Clutch Adjustment': 150.0,
   };
-  final Set<String> _selectedServiceNames = {'Oil Change'};
-  final TextEditingController _noteCtrl = TextEditingController(text: 'Please check brake noise.');
+  final Set<String> _selectedServiceNames = {};  // BUG-12 fix: no pre-selection
+  final TextEditingController _noteCtrl = TextEditingController();  // BUG-12 fix: no pre-fill
 
   // Customer & Vehicle Lists
   final _searchCustomerCtrl = TextEditingController();
   final _searchServiceCtrl = TextEditingController();
+  String _serviceFilter = 'All'; // BUG-13 fix: track active filter
   List<Customer> _customers = [];
   bool _isLoading = false;
+  String _customerError = ''; // BUG-06 fix: track load error
   bool _isCreatingJob = false;
-  String _createdJobId = 'JOB-2025-000125';
+  String _createdJobId = '';  // BUG-11 fix: no fake pre-populated value
 
   // New Customer Form Controllers
   final _nameCtrl  = TextEditingController();
@@ -77,32 +81,20 @@ class _NewJobScreenState extends State<NewJobScreen> {
     super.dispose();
   }
 
-  String get _token => context.read<AuthProvider>().token ?? '';
 
   Future<void> _fetchRecentCustomers([String q = '']) async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _customerError = '';
+    });
     try {
-      final results = await CustomerService.search(_token, q);
+      final results = await CustomerService.search(q); // BUG-20 fix: no token param
       setState(() => _customers = results);
     } catch (e) {
-      if (_customers.isEmpty) {
-        setState(() {
-          _customers = [
-            Customer(id: 1, name: 'Rahul Sharma', phone: '9876543210', vehicles: [
-              Vehicle(id: 101, vehicleNumber: 'MH 12 AB 1234', brand: 'Honda', model: 'Activa 6G'),
-              Vehicle(id: 102, vehicleNumber: 'MH 12 XY 5678', brand: 'Honda', model: 'Shine'),
-            ]),
-            Customer(id: 2, name: 'Amit Patel', phone: '9876512340', vehicles: [
-              Vehicle(id: 103, vehicleNumber: 'MH 12 PQ 9012', brand: 'TVS', model: 'Jupiter'),
-            ]),
-            Customer(id: 3, name: 'Vijay Joshi', phone: '9812345678', vehicles: [
-              Vehicle(id: 102, vehicleNumber: 'MH 12 XY 5678', brand: 'Honda', model: 'Shine'),
-            ]),
-            Customer(id: 4, name: 'Suresh Kumar', phone: '9821122334', vehicles: []),
-            Customer(id: 5, name: 'Pooja Singh', phone: '9765432190', vehicles: []),
-          ];
-        });
-      }
+      // BUG-06 fix: show error message instead of injecting fake data
+      setState(() {
+        _customerError = 'Failed to load customers. Check your connection.';
+      });
     } finally {
       setState(() => _isLoading = false);
     }
@@ -155,20 +147,16 @@ class _NewJobScreenState extends State<NewJobScreen> {
                     return;
                   }
                   try {
-                    final c = await CustomerService.create(_token, _nameCtrl.text.trim(), _phoneCtrl.text.trim(), '');
+                    // BUG-20 fix: no token param
+                    final c = await CustomerService.create(_nameCtrl.text.trim(), _phoneCtrl.text.trim(), '');
                     setState(() {
                       _selectedCustomer = c;
                       _currentStep = 1;
                     });
                     if (mounted) Navigator.pop(context);
                   } catch (e) {
-                    final c = Customer(id: DateTime.now().millisecondsSinceEpoch, name: _nameCtrl.text.trim(), phone: _phoneCtrl.text.trim(), vehicles: []);
-                    setState(() {
-                      _customers.insert(0, c);
-                      _selectedCustomer = c;
-                      _currentStep = 1;
-                    });
-                    if (mounted) Navigator.pop(context);
+                    // BUG-06 fix: don't silently inject fake data — show error
+                    Fluttertoast.showToast(msg: 'Failed to save customer. Check your connection.');
                   }
                 },
                 child: const Text('Save Customer', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
@@ -230,23 +218,26 @@ class _NewJobScreenState extends State<NewJobScreen> {
                   final model = _modelCtrl.text.trim();
 
                   try {
-                    final v = await VehicleService.create(_token, _selectedCustomer!.id, number, brand, model, '');
+                    // BUG-20 fix: no token param
+                    final v = await VehicleService.create(_selectedCustomer!.id, number, brand, model, '');
                     setState(() {
                       _selectedVehicle = v;
+                      // BUG-22 fix: rebuild list instead of mutating final List
                       if (!_selectedCustomer!.vehicles.any((x) => x.id == v.id)) {
-                        _selectedCustomer!.vehicles.add(v);
+                        _selectedCustomer = Customer(
+                          id: _selectedCustomer!.id,
+                          name: _selectedCustomer!.name,
+                          phone: _selectedCustomer!.phone,
+                          email: _selectedCustomer!.email,
+                          vehicles: [..._selectedCustomer!.vehicles, v],
+                        );
                       }
                       _currentStep = 2;
                     });
                     if (mounted) Navigator.pop(context);
                   } catch (e) {
-                    final v = Vehicle(id: DateTime.now().millisecondsSinceEpoch, vehicleNumber: number, brand: brand, model: model);
-                    setState(() {
-                      _selectedCustomer!.vehicles.add(v);
-                      _selectedVehicle = v;
-                      _currentStep = 2;
-                    });
-                    if (mounted) Navigator.pop(context);
+                    // BUG-06 fix: don't silently inject fake offline vehicles
+                    Fluttertoast.showToast(msg: 'Failed to save vehicle. Check your connection.');
                   }
                 },
                 child: const Text('Save & Attach Vehicle', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
@@ -260,7 +251,8 @@ class _NewJobScreenState extends State<NewJobScreen> {
   }
 
   void _showCreateCustomServiceSheet() {
-    final nameC = TextEditingController();
+    // BUG-23 fix: create controllers and dispose them when the sheet closes
+    final nameC  = TextEditingController();
     final priceC = TextEditingController();
 
     showModalBottomSheet(
@@ -308,11 +300,30 @@ class _NewJobScreenState extends State<NewJobScreen> {
           ],
         ),
       ),
-    );
+    ).whenComplete(() {
+      // BUG-23 fix: dispose controllers when sheet is dismissed
+      nameC.dispose();
+      priceC.dispose();
+    });
   }
 
   Future<void> _submitJobCard() async {
+    if (_selectedCustomer == null || _selectedVehicle == null || _selectedServiceNames.isEmpty) {
+      Fluttertoast.showToast(msg: 'Please complete all steps before submitting.');
+      return;
+    }
     setState(() => _isCreatingJob = true);
+    RpmGaugeLoader.show(
+      context,
+      brandName: 'GarageOS',
+      statusMessages: [
+        'Creating job card',
+        'Attaching vehicle & services',
+        'Updating garage ledger',
+        'Almost ready',
+      ],
+    );
+
     try {
       final items = _selectedServiceNames.map((s) => {
         'type': 'service',
@@ -320,22 +331,28 @@ class _NewJobScreenState extends State<NewJobScreen> {
         'price': _availableServices[s] ?? 0.0,
       }).toList();
 
+      // BUG-07 fix: use real IDs directly — no magic > 100 heuristic
+      final customerId = _selectedCustomer!.id;
+      final vehicleId  = _selectedVehicle!.id;
+
+      // BUG-20 fix: no token param
       final res = await JobCardService.create(
-        _token,
-        _selectedVehicle?.id ?? 1,
-        _selectedCustomer?.id ?? 1,
+        vehicleId,
+        customerId,
         items,
       );
+      if (mounted) RpmGaugeLoader.hide(context);
+
+      if (mounted) {
+        context.read<DashboardProvider>().fetchDashboardStats();
+      }
       setState(() {
         _createdJobId = 'JOB-2025-${res.id.toString().padLeft(6, '0')}';
         _currentStep = 4; // Job Created Success Screen
       });
     } catch (e) {
-      // Local fallback success screen
-      setState(() {
-        _createdJobId = 'JOB-2025-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
-        _currentStep = 4;
-      });
+      if (mounted) RpmGaugeLoader.hide(context);
+      Fluttertoast.showToast(msg: 'Error creating job card: $e');
     } finally {
       setState(() => _isCreatingJob = false);
     }
@@ -420,37 +437,57 @@ class _NewJobScreenState extends State<NewJobScreen> {
         Expanded(
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _customers.length,
-                  itemBuilder: (context, index) {
-                    final c = _customers[index];
-                    final isSelected = _selectedCustomer?.id == c.id;
-                    return Card(
-                      color: isSelected ? AppColors.primaryLight : AppColors.surface,
-                      margin: const EdgeInsets.only(bottom: 10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        side: BorderSide(color: isSelected ? AppColors.primary : AppColors.cardBorder, width: isSelected ? 2 : 1),
-                      ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: isSelected ? AppColors.primary : AppColors.background,
-                          child: Icon(Icons.person_outline, color: isSelected ? Colors.white : AppColors.textSecondary),
+              : _customerError.isNotEmpty
+                  // BUG-06 fix: show error message instead of fake data
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.wifi_off, color: AppColors.textLight, size: 48),
+                            const SizedBox(height: 12),
+                            Text(_customerError, style: const TextStyle(color: AppColors.textSecondary), textAlign: TextAlign.center),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () => _fetchRecentCustomers(),
+                              child: const Text('Retry'),
+                            ),
+                          ],
                         ),
-                        title: Text(c.name, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                        subtitle: Text(c.phone, style: const TextStyle(color: AppColors.textSecondary)),
-                        trailing: isSelected ? const Icon(Icons.check_circle, color: AppColors.primary) : const Icon(Icons.chevron_right, color: AppColors.textLight),
-                        onTap: () {
-                          setState(() {
-                            _selectedCustomer = c;
-                            _currentStep = 1;
-                          });
-                        },
                       ),
-                    );
-                  },
-                ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _customers.length,
+                      itemBuilder: (context, index) {
+                        final c = _customers[index];
+                        final isSelected = _selectedCustomer?.id == c.id;
+                        return Card(
+                          color: isSelected ? AppColors.primaryLight : AppColors.surface,
+                          margin: const EdgeInsets.only(bottom: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            side: BorderSide(color: isSelected ? AppColors.primary : AppColors.cardBorder, width: isSelected ? 2 : 1),
+                          ),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: isSelected ? AppColors.primary : AppColors.background,
+                              child: Icon(Icons.person_outline, color: isSelected ? Colors.white : AppColors.textSecondary),
+                            ),
+                            title: Text(c.name, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                            subtitle: Text(c.phone, style: const TextStyle(color: AppColors.textSecondary)),
+                            trailing: isSelected ? const Icon(Icons.check_circle, color: AppColors.primary) : const Icon(Icons.chevron_right, color: AppColors.textLight),
+                            onTap: () {
+                              setState(() {
+                                _selectedCustomer = c;
+                                _currentStep = 1;
+                              });
+                            },
+                          ),
+                        );
+                      },
+                    ),
         ),
         SafeArea(
           child: Padding(
@@ -594,6 +631,8 @@ class _NewJobScreenState extends State<NewJobScreen> {
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.cardBorder)),
             ),
+            // BUG-14 fix: rebuild list on every keystroke
+            onChanged: (_) => setState(() {}),
           ),
         ),
         Padding(
@@ -603,10 +642,15 @@ class _NewJobScreenState extends State<NewJobScreen> {
               padding: const EdgeInsets.only(right: 8.0),
               child: ChoiceChip(
                 label: Text(tab),
-                selected: tab == 'All' || tab == 'Service',
+                // BUG-13 fix: use _serviceFilter state
+                selected: _serviceFilter == tab,
                 selectedColor: AppColors.primary,
-                labelStyle: TextStyle(color: (tab == 'All' || tab == 'Service') ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.bold),
-                onSelected: (_) {},
+                labelStyle: TextStyle(
+                  color: _serviceFilter == tab ? Colors.white : AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+                // BUG-13 fix: actually update the filter
+                onSelected: (_) => setState(() => _serviceFilter = tab),
               ),
             )).toList(),
           ),
@@ -619,38 +663,57 @@ class _NewJobScreenState extends State<NewJobScreen> {
           ),
         ),
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: _availableServices.entries.map((entry) {
-              final isChecked = _selectedServiceNames.contains(entry.key);
-              return Card(
-                color: AppColors.surface,
-                margin: const EdgeInsets.only(bottom: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: AppColors.cardBorder)),
-                child: CheckboxListTile(
-                  title: Text(entry.key, style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                  secondary: Text('₹${entry.value.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary)),
-                  value: isChecked,
-                  activeColor: AppColors.primary,
-                  onChanged: (val) {
-                    setState(() {
-                      if (val == true) {
-                        _selectedServiceNames.add(entry.key);
-                      } else {
-                        _selectedServiceNames.remove(entry.key);
-                      }
-                    });
-                  },
-                ),
+          child: Builder(builder: (context) {
+            // BUG-14 fix: apply search query filter
+            final query = _searchServiceCtrl.text.toLowerCase();
+            final entries = _availableServices.entries.where((entry) {
+              final matchesSearch = query.isEmpty || entry.key.toLowerCase().contains(query);
+              // BUG-13 fix: apply category filter (simplified by name heuristic since services are local)
+              final matchesFilter = _serviceFilter == 'All' ||
+                  (_serviceFilter == 'Parts' && (entry.key.toLowerCase().contains('part') || entry.key.toLowerCase().contains('liner') || entry.key.toLowerCase().contains('battery'))) ||
+                  (_serviceFilter == 'Repair' && (entry.key.toLowerCase().contains('repair') || entry.key.toLowerCase().contains('check') || entry.key.toLowerCase().contains('adjustment') || entry.key.toLowerCase().contains('replacement'))) ||
+                  (_serviceFilter == 'Service');
+              return matchesSearch && matchesFilter;
+            }).toList();
+
+            if (entries.isEmpty) {
+              return const Center(
+                child: Text('No services match your search.', style: TextStyle(color: AppColors.textSecondary)),
               );
-            }).toList(),
-          ),
+            }
+            return ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: entries.map((entry) {
+                final isChecked = _selectedServiceNames.contains(entry.key);
+                return Card(
+                  color: AppColors.surface,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: AppColors.cardBorder)),
+                  child: CheckboxListTile(
+                    title: Text(entry.key, style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                    secondary: Text('₹${entry.value.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary)),
+                    value: isChecked,
+                    activeColor: AppColors.primary,
+                    onChanged: (val) {
+                      setState(() {
+                        if (val == true) {
+                          _selectedServiceNames.add(entry.key);
+                        } else {
+                          _selectedServiceNames.remove(entry.key);
+                        }
+                      });
+                    },
+                  ),
+                );
+              }).toList(),
+            );
+          }),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: TextButton.icon(
             icon: const Icon(Icons.add, color: AppColors.primary),
-            label: const Text('+ Create New Service / Repair', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+            label: const Text('Create New Service / Repair', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
             onPressed: _showCreateCustomServiceSheet,
           ),
         ),
@@ -681,39 +744,47 @@ class _NewJobScreenState extends State<NewJobScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Customer Summary Card
-          Card(
-            color: AppColors.surface,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Customer', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                  const SizedBox(height: 2),
-                  Text(_selectedCustomer?.name ?? 'Rahul Sharma', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
-                  Text(_selectedCustomer?.phone ?? '9876543210', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                ],
+          // Customer & Vehicle Summary Cards (Side by Side)
+          Row(
+            children: [
+              Expanded(
+                child: Card(
+                  color: AppColors.surface,
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Customer', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 2),
+                        Text(_selectedCustomer?.name ?? 'Rahul Sharma', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 2),
+                        Text(_selectedCustomer?.phone ?? '9876543210', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Vehicle Summary Card
-          Card(
-            color: AppColors.surface,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Vehicle', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                  const SizedBox(height: 2),
-                  Text('${_selectedVehicle?.brand ?? 'Honda'} ${_selectedVehicle?.model ?? 'Activa 6G'}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
-                  Text(_selectedVehicle?.vehicleNumber ?? 'MH 12 AB 1234', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 14)),
-                ],
+              const SizedBox(width: 8),
+              Expanded(
+                child: Card(
+                  color: AppColors.surface,
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Vehicle', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 2),
+                        Text('${_selectedVehicle?.brand ?? 'Honda'} ${_selectedVehicle?.model ?? 'Activa 6G'}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 2),
+                        Text(_selectedVehicle?.vehicleNumber ?? 'MH 12 AB 1234', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
           const SizedBox(height: 16),
 
@@ -807,9 +878,9 @@ class _NewJobScreenState extends State<NewJobScreen> {
                     const Divider(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text('Date', style: TextStyle(color: AppColors.textSecondary)),
-                        Text('12 May 2025, 10:30 AM', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                      children: [
+                        const Text('Date', style: TextStyle(color: AppColors.textSecondary)),
+                        Text(DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now()), style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -830,8 +901,13 @@ class _NewJobScreenState extends State<NewJobScreen> {
               height: 50,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                onPressed: () => context.go('/job-card/1'),
-                child: const Text('View Job', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                onPressed: () async {
+                  final dashboardProvider = context.read<DashboardProvider>();
+                  final router = GoRouter.of(context);
+                  await dashboardProvider.fetchDashboardStats();
+                  router.go('/dashboard');
+                },
+                child: const Text('View All Jobs', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
           ],

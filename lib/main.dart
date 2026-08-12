@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,12 +8,16 @@ import 'config/routes.dart';
 import 'providers/auth_provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'providers/job_card_provider.dart';
+import 'services/api_service.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
     return super.createHttpClient(context)
-      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+      // BUG-16 fix: only bypass SSL in debug mode (e.g. local tunnel)
+      // REMOVE this entire override before production release
+      ..badCertificateCallback = (X509Certificate cert, String host, int port) => kDebugMode;
   }
 }
 
@@ -20,13 +25,21 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = MyHttpOverrides();
   
+  ApiService.onUnauthorized = () {
+    Fluttertoast.showToast(msg: 'Session expired (401). Please log in again.');
+  };
+
   final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
+  final token  = prefs.getString('token');
   
+  final authProvider = AuthProvider();
+  // BUG-21 fix: call restoreSession so staffName/garageName are set before routing
+  await authProvider.restoreSession();
+
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => JobCardProvider()),
       ],

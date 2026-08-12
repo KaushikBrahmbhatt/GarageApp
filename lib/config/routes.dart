@@ -4,6 +4,11 @@ import '../screens/main_shell_screen.dart';
 import '../screens/new_job/new_job_screen.dart';
 import '../screens/job_card/job_card_screen.dart';
 import '../screens/invoice/invoice_screen.dart';
+import '../screens/vehicles/vehicles_screen.dart';
+import '../screens/services/services_repairs_screen.dart';
+import '../screens/inventory/inventory_screen.dart';
+import '../screens/reports/reports_screen.dart';
+import '../screens/settings/settings_screen.dart';
 
 class AppRouter {
   static GoRouter getRouter(String? token) {
@@ -24,19 +29,23 @@ class AppRouter {
         ),
         GoRoute(
           path: '/customers',
-          builder: (context, state) => const MainShellScreen(initialIndex: 2),
-        ),
-        GoRoute(
-          path: '/vehicles',
           builder: (context, state) => const MainShellScreen(initialIndex: 3),
         ),
         GoRoute(
-          path: '/services',
+          path: '/more',
           builder: (context, state) => const MainShellScreen(initialIndex: 4),
         ),
         GoRoute(
+          path: '/vehicles',
+          builder: (context, state) => const VehiclesScreen(),
+        ),
+        GoRoute(
+          path: '/services',
+          builder: (context, state) => const ServicesRepairsScreen(),
+        ),
+        GoRoute(
           path: '/inventory',
-          builder: (context, state) => const MainShellScreen(initialIndex: 5),
+          builder: (context, state) => const InventoryScreen(),
         ),
         GoRoute(
           path: '/new-job',
@@ -52,13 +61,14 @@ class AppRouter {
         ),
         GoRoute(
           path: '/reports',
-          builder: (context, state) => const MainShellScreen(initialIndex: 7),
+          builder: (context, state) => const ReportsScreen(),
         ),
         GoRoute(
           path: '/settings',
-          builder: (context, state) => const MainShellScreen(initialIndex: 8),
+          builder: (context, state) => const SettingsScreen(),
         ),
       ],
     );
   }
 }
+

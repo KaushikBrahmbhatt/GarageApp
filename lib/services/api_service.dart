@@ -5,6 +5,7 @@ import '../config/api_config.dart';
 
 class ApiService {
   static const Duration _timeout = Duration(seconds: 8);
+  static Function()? onUnauthorized;
 
   Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
@@ -14,7 +15,7 @@ class ApiService {
       'Content-Type': 'application/json',
       'bypass-tunnel-reminder': 'true',
       'User-Agent': 'GarageApp/1.0 Mobile',
-      if (token != null) 'Authorization': 'Bearer $token',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
   }
 
@@ -25,7 +26,7 @@ class ApiService {
       final response = await http.get(url, headers: await _getHeaders()).timeout(_timeout);
       return _handleResponse(response);
     } catch (e) {
-      throw Exception('Network error: $e');
+      throw Exception('$e');
     }
   }
 
@@ -36,7 +37,7 @@ class ApiService {
       final response = await http.post(url, headers: await _getHeaders(), body: jsonEncode(body)).timeout(_timeout);
       return _handleResponse(response);
     } catch (e) {
-      throw Exception('Network error: $e');
+      throw Exception('$e');
     }
   }
 
@@ -47,7 +48,18 @@ class ApiService {
       final response = await http.patch(url, headers: await _getHeaders(), body: jsonEncode(body)).timeout(_timeout);
       return _handleResponse(response);
     } catch (e) {
-      throw Exception('Network error: $e');
+      throw Exception('$e');
+    }
+  }
+
+  Future<dynamic> put(String endpoint, Map<String, dynamic> body) async {
+    try {
+      final baseUrl = await ApiConfig.getBaseUrl();
+      final url = Uri.parse('$baseUrl$endpoint');
+      final response = await http.put(url, headers: await _getHeaders(), body: jsonEncode(body)).timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      throw Exception('$e');
     }
   }
 
@@ -58,7 +70,7 @@ class ApiService {
       final response = await http.delete(url, headers: await _getHeaders()).timeout(_timeout);
       return _handleResponse(response);
     } catch (e) {
-      throw Exception('Network error: $e');
+      throw Exception('$e');
     }
   }
 
@@ -70,8 +82,23 @@ class ApiService {
         return jsonDecode(body);
       }
       throw Exception('Localtunnel returned HTML landing page. Please open https://kaushik-garage.loca.lt once in browser!');
+    } else if (response.statusCode == 401) {
+      SharedPreferences.getInstance().then((prefs) => prefs.remove('token'));
+      onUnauthorized?.call();
+      throw Exception('Session expired (401 Unauthorized). Please log in again.');
     } else {
-      throw Exception('Server error (HTTP ${response.statusCode}): ${response.body}');
+      String msg = 'Server error (HTTP ${response.statusCode})';
+      try {
+        final errJson = jsonDecode(response.body);
+        if (errJson is Map && errJson.containsKey('message')) {
+          msg = '${errJson['message']} (${response.statusCode})';
+        } else {
+          msg = '${response.body} (${response.statusCode})';
+        }
+      } catch (_) {
+        msg = '${response.body} (${response.statusCode})';
+      }
+      throw Exception(msg);
     }
   }
 }

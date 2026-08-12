@@ -72,7 +72,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
             height: 50,
             child: ElevatedButton.icon(
               icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('+ Add Part', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              label: const Text('Add Part', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

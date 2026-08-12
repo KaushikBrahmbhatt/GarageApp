@@ -21,7 +21,6 @@ class JobCardService {
   }
 
   static Future<JobCard> create(
-    String token,
     int vehicleId,
     int customerId,
     List<Map<String, dynamic>> items,
