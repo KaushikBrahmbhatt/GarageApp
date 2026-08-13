@@ -60,4 +60,8 @@ class JobCardService {
   static Future<void> deleteItem(int itemId) async {
     await _api.delete('/job-card-items/$itemId');
   }
+
+  static Future<void> deleteJobCard(int id) async {
+    await _api.delete('/job-cards/$id');
+  }
 }

@@ -4,8 +4,11 @@ import '../../config/app_colors.dart';
 import '../../models/job_card.dart';
 import '../../services/job_card_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:provider/provider.dart';
+import '../../providers/dashboard_provider.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/status_badge.dart';
+import '../../widgets/rpm_gauge_loader.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -63,6 +66,101 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
       return matchesFilter && matchesSearch;
     }).toList();
+  }
+
+  void _confirmDeleteJobCard(JobCard jc) async {
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: AppColors.textLight,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const CircleAvatar(
+              radius: 28,
+              backgroundColor: Color(0xFF3A1010),
+              child: Icon(Icons.delete_forever, color: AppColors.error, size: 32),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Remove JOB-2025-${jc.id.toString().padLeft(6, '0')}?',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Are you sure you want to remove this job card?\nIt will be soft-deleted and removed from all lists.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: const BorderSide(color: AppColors.cardBorder),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.error,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('Remove Job', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final dashboardProvider = context.read<DashboardProvider>();
+
+      RpmGaugeLoader.show(
+        context,
+        brandName: 'GarageOS',
+        statusMessages: [
+          'Removing job card',
+          'Updating records',
+          'Almost ready',
+        ],
+      );
+      try {
+        await JobCardService.deleteJobCard(jc.id);
+        await dashboardProvider.fetchDashboardStats();
+        await _fetchJobCards();
+        if (mounted) RpmGaugeLoader.hide(context);
+        Fluttertoast.showToast(msg: 'Job card removed successfully');
+      } catch (e) {
+        if (mounted) RpmGaugeLoader.hide(context);
+        Fluttertoast.showToast(msg: 'Failed to remove job card: $e');
+      }
+    }
   }
 
   @override
@@ -153,6 +251,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   ],
                                 ),
                                 onTap: () => context.push('/job-card/${jc.id}'),
+                                onLongPress: () => _confirmDeleteJobCard(jc),
                               ),
                             );
                           },
