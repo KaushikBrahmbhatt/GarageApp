@@ -195,10 +195,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: _showEditGarageSheet,
             ),
           ),
-          _buildTile(Icons.label_outlined, 'Categories', 'General service, Engine, Brakes...', () {}),
-          _buildTile(Icons.credit_card_outlined, 'Payment Methods', 'Cash, UPI, Card settings', () {}),
-
-          const Divider(height: 32, color: AppColors.cardBorder),
+          const SizedBox(height: 16),
+          const Divider(height: 24, color: AppColors.cardBorder),
 
           // Server API Settings
           ExpansionTile(
@@ -273,20 +271,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 24),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTile(IconData icon, String title, String subtitle, VoidCallback onTap) {
-    return Card(
-      color: AppColors.surface,
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: Icon(icon, color: AppColors.primary, size: 22),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary)),
-        subtitle: Text(subtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-        trailing: const Icon(Icons.chevron_right, color: AppColors.textLight, size: 20),
-        onTap: onTap,
       ),
     );
   }
