@@ -10,6 +10,7 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/status_badge.dart';
 import '../../widgets/rpm_gauge_loader.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:intl/intl.dart';
 
 class JobCardScreen extends StatefulWidget {
   final int id;
@@ -346,6 +347,27 @@ class _JobCardScreenState extends State<JobCardScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // Job Creation Date & Time Card
+          Card(
+            color: AppColors.surface,
+            margin: const EdgeInsets.only(bottom: 12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
+                children: [
+                  const Icon(Icons.schedule, size: 16, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  const Text('Created:', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 6),
+                  Text(
+                    DateFormat('dd MMM yyyy, hh:mm a').format(jobCard.createdAt),
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
           // Customer & Vehicle Details Row (Side by Side)
           Row(
             children: [

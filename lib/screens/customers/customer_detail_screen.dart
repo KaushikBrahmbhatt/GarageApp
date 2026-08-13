@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:intl/intl.dart';
 import '../../config/app_colors.dart';
 import '../../models/customer.dart';
 import '../../services/customer_service.dart';
@@ -364,7 +365,23 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                       child: Icon(Icons.receipt_long, color: AppColors.primary, size: 22),
                     ),
                     title: Text('JOB-2025-${jc.id.toString().padLeft(6, '0')}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
-                    subtitle: Text('${jc.vehicle?.vehicleNumber ?? ''} • $vehicleModel', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${jc.vehicle?.vehicleNumber ?? ''} • $vehicleModel', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            const Icon(Icons.schedule, size: 12, color: AppColors.textSecondary),
+                            const SizedBox(width: 4),
+                            Text(
+                              DateFormat('dd MMM yyyy, hh:mm a').format(jc.createdAt),
+                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                     trailing: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.end,

@@ -4,6 +4,7 @@ import '../../config/app_colors.dart';
 import '../../models/job_card.dart';
 import '../../services/job_card_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../widgets/skeleton_loader.dart';
@@ -241,7 +242,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   child: Icon(Icons.work, color: AppColors.primary, size: 22),
                                 ),
                                 title: Text('JOB-2025-${jc.id.toString().padLeft(6, '0')}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
-                                subtitle: Text('$customerName • $vehicleModel', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('$customerName • $vehicleModel', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                                    const SizedBox(height: 2),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.schedule, size: 12, color: AppColors.textSecondary),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          DateFormat('dd MMM yyyy, hh:mm a').format(jc.createdAt),
+                                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                                 trailing: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.end,

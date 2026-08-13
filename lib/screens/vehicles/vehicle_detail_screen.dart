@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:intl/intl.dart';
 import '../../config/app_colors.dart';
 import '../../models/vehicle.dart';
 import '../../services/vehicle_service.dart';
@@ -263,11 +264,27 @@ class _VehicleDetailScreenState extends State<VehicleDetailScreen> {
                       child: Icon(Icons.build, color: AppColors.primary, size: 20),
                     ),
                     title: Text('JOB-2025-${jc.id.toString().padLeft(6, '0')}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
-                    subtitle: Text(
-                      itemsSummary.isNotEmpty ? '$itemsSummary$moreCount' : 'General Service',
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          itemsSummary.isNotEmpty ? '$itemsSummary$moreCount' : 'General Service',
+                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            const Icon(Icons.schedule, size: 12, color: AppColors.textSecondary),
+                            const SizedBox(width: 4),
+                            Text(
+                              DateFormat('dd MMM yyyy, hh:mm a').format(jc.createdAt),
+                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                     trailing: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
