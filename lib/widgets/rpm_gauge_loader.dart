@@ -25,12 +25,21 @@ class RpmGaugeLoader extends StatefulWidget {
       builder: (ctx) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        insetPadding: EdgeInsets.zero,
-        child: Center(
+        child: Container(
+          width: 320,
+          padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+          decoration: BoxDecoration(
+            color: const Color(0xFF17181B),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: const Color(0xFF26282E)),
+            boxShadow: const [
+              BoxShadow(color: Colors.black54, blurRadius: 40, offset: Offset(0, 20)),
+            ],
+          ),
           child: RpmGaugeLoader(
             brandName: brandName,
             statusMessages: statusMessages,
-            size: 200.0,
+            size: 190.0,
           ),
         ),
       ),
