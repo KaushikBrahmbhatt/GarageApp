@@ -46,14 +46,6 @@ class MoreScreen extends StatelessWidget {
           ),
           _buildMenuItem(
             context,
-            icon: Icons.receipt_long_outlined,
-            iconColor: AppColors.success,
-            title: 'Invoices',
-            subtitle: 'View invoices & payments',
-            onTap: () => context.push('/jobs'),
-          ),
-          _buildMenuItem(
-            context,
             icon: Icons.bar_chart_outlined,
             iconColor: Colors.indigo,
             title: 'Reports',

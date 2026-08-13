@@ -248,10 +248,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: _showEditGarageSheet,
             ),
           ),
-          const SizedBox(height: 16),
-
-          _buildTile(Icons.build_outlined, 'Services & Repairs Catalog', 'Manage services & predefined prices', () => context.push('/services')),
-          _buildTile(Icons.inventory_2_outlined, 'Parts / Inventory Catalog', 'Manage parts & stock', () => context.push('/inventory')),
           _buildTile(Icons.label_outlined, 'Categories', 'General service, Engine, Brakes...', () {}),
           _buildTile(Icons.credit_card_outlined, 'Payment Methods', 'Cash, UPI, Card settings', () {}),
 
