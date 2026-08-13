@@ -175,42 +175,71 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Revenue & Volume Timeline', style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Daily Revenue & Volume Timeline', style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                          Row(
+                            children: [
+                              Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle)),
+                              const SizedBox(width: 4),
+                              const Text('Revenue', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
                       if (_analytics!.trendData.isEmpty)
                         const SizedBox(height: 120, child: Center(child: Text('No data for selected period', style: TextStyle(color: AppColors.textSecondary))))
                       else
                         SizedBox(
-                          height: 160,
+                          height: 170,
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: _analytics!.trendData.map((pt) {
                               final maxRev = _analytics!.trendData.fold<double>(1, (max, p) => p.revenue > max ? p.revenue : max);
-                              final heightRatio = (pt.revenue / maxRev).clamp(0.08, 1.0);
+                              final hasRevenue = pt.revenue > 0;
+                              final hasJobs = pt.count > 0;
+
+                              double barHeight = 8.0;
+                              if (hasRevenue) {
+                                barHeight = (pt.revenue / maxRev * 110).clamp(16.0, 110.0);
+                              } else if (hasJobs) {
+                                barHeight = 24.0;
+                              }
 
                               return Flexible(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
-                                    if (pt.revenue > 0)
+                                    if (hasRevenue)
                                       Text(
                                         '₹${pt.revenue >= 1000 ? '${(pt.revenue / 1000).toStringAsFixed(1)}k' : pt.revenue.toStringAsFixed(0)}',
                                         style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.primary),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      )
+                                    else if (hasJobs)
+                                      Text(
+                                        '${pt.count}j',
+                                        style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.warningText),
                                       ),
                                     const SizedBox(height: 4),
                                     Container(
-                                      width: 14,
-                                      height: 110 * heightRatio,
+                                      width: 16,
+                                      height: barHeight,
                                       decoration: BoxDecoration(
-                                        color: pt.revenue > 0 ? AppColors.primary : AppColors.cardBorder,
+                                        color: hasRevenue
+                                            ? AppColors.primary
+                                            : (hasJobs ? AppColors.warningText : AppColors.cardBorder),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
                                       pt.label,
-                                      style: const TextStyle(fontSize: 9, color: AppColors.textSecondary),
+                                      style: const TextStyle(fontSize: 9, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
