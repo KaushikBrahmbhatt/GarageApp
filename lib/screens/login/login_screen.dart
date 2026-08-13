@@ -115,9 +115,17 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.build_circle, size: 64, color: AppTheme.kPrimary),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.asset(
+                      'assets/images/app_logo.png',
+                      width: 90,
+                      height: 90,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                   const SizedBox(height: 16),
-                  Text('Kaushik Garage', style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppTheme.kPrimary, fontWeight: FontWeight.bold)),
+                  Text('Garage Management', style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppTheme.kPrimary, fontWeight: FontWeight.bold)),
                   const Text('Garage Management System', style: TextStyle(color: AppTheme.kTextMuted)),
                   const SizedBox(height: 32),
                   TextField(

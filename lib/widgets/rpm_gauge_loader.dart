@@ -180,10 +180,14 @@ class _RpmGaugeLoaderState extends State<RpmGaugeLoader> with SingleTickerProvid
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.build_rounded,
-              size: 20,
-              color: Color(0xFFF0A202),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.asset(
+                'assets/images/app_logo.png',
+                width: 22,
+                height: 22,
+                fit: BoxFit.cover,
+              ),
             ),
             const SizedBox(width: 8),
             RichText(
