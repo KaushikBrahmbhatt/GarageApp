@@ -21,7 +21,7 @@ class RpmGaugeLoader extends StatefulWidget {
     showDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: const Color(0xEE0D0E10),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (ctx) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
