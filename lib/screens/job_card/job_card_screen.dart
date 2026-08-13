@@ -286,6 +286,52 @@ class _JobCardScreenState extends State<JobCardScreen> {
           ),
           const SizedBox(height: 14),
 
+          // Customer Notes (if present)
+          if (jobCard.notes != null && jobCard.notes!.trim().isNotEmpty) ...[
+            Card(
+              color: const Color(0xFFFEF9C3),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: const Color(0xFFFDE047).withValues(alpha: 0.8)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.sticky_note_2_outlined, color: Color(0xFFA16207), size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Customer Note / Instructions',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              color: Color(0xFFA16207),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            jobCard.notes!.trim(),
+                            style: const TextStyle(
+                              color: Color(0xFF713F12),
+                              fontSize: 13,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
+
           // Customer Request & Service Items
           const Text('Job Items & Services', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary)),
           const SizedBox(height: 8),

@@ -336,11 +336,12 @@ class _NewJobScreenState extends State<NewJobScreen> {
       final customerId = _selectedCustomer!.id;
       final vehicleId  = _selectedVehicle!.id;
 
-      // BUG-20 fix: no token param
+      final notesText = _noteCtrl.text.trim();
       final res = await JobCardService.create(
         vehicleId,
         customerId,
         items,
+        notes: notesText.isEmpty ? null : notesText,
       );
       if (mounted) RpmGaugeLoader.hide(context);
 

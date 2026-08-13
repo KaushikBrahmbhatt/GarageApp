@@ -23,12 +23,14 @@ class JobCardService {
   static Future<JobCard> create(
     int vehicleId,
     int customerId,
-    List<Map<String, dynamic>> items,
-  ) async {
+    List<Map<String, dynamic>> items, {
+    String? notes,
+  }) async {
     final data = await _api.post('/job-cards', {
       'vehicle_id': vehicleId,
       'customer_id': customerId,
       'items': items,
+      if (notes != null && notes.isNotEmpty) 'notes': notes,
     });
     final json = data['data'] ?? data;
     return JobCard.fromJson(json);
