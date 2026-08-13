@@ -254,9 +254,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildTile(Icons.inventory_2_outlined, 'Parts / Inventory Catalog', 'Manage parts & stock', () => context.push('/inventory')),
           _buildTile(Icons.label_outlined, 'Categories', 'General service, Engine, Brakes...', () {}),
           _buildTile(Icons.credit_card_outlined, 'Payment Methods', 'Cash, UPI, Card settings', () {}),
-          _buildTile(Icons.receipt_long_outlined, 'Invoice Settings', 'Invoice prefix & tax GST info', () {}),
-          _buildTile(Icons.notifications_outlined, 'Notifications', 'Reminders & service alerts', () {}),
-          _buildTile(Icons.cloud_upload_outlined, 'Backup & Restore', 'Data security & backup', () {}),
 
           const Divider(height: 32, color: AppColors.cardBorder),
 

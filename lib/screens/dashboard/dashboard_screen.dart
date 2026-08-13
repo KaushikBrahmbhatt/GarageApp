@@ -74,10 +74,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: AppColors.textPrimary),
-            onPressed: () {},
-          ),
-          IconButton(
             icon: const Icon(Icons.logout, color: AppColors.error),
             tooltip: 'Logout',
             onPressed: () => _showLogoutDialog(context),

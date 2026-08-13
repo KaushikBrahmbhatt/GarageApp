@@ -71,14 +71,6 @@ class MoreScreen extends StatelessWidget {
           ),
           _buildMenuItem(
             context,
-            icon: Icons.backup_outlined,
-            iconColor: AppColors.textSecondary,
-            title: 'Backup & Restore',
-            subtitle: 'Secure cloud & local data backup',
-            onTap: () {},
-          ),
-          _buildMenuItem(
-            context,
             icon: Icons.info_outline,
             iconColor: AppColors.textSecondary,
             title: 'About App',
