@@ -1,12 +1,134 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../../config/app_colors.dart';
 import '../../providers/auth_provider.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import '../../models/garage.dart';
+import '../../services/garage_service.dart';
+import '../../widgets/rpm_gauge_loader.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
+
+  void _showEditGarageSheet(BuildContext context) async {
+    RpmGaugeLoader.show(context, statusMessages: ['Loading profile details']);
+    Garage? garage;
+    try {
+      garage = await GarageService.getGarage();
+    } catch (_) {}
+    if (context.mounted) RpmGaugeLoader.hide(context);
+
+    if (!context.mounted) return;
+
+    final nameCtrl = TextEditingController(text: garage?.name ?? context.read<AuthProvider>().garageName ?? '');
+    final ownerCtrl = TextEditingController(text: garage?.ownerName ?? context.read<AuthProvider>().staffName ?? '');
+    final phoneCtrl = TextEditingController(text: garage?.phone ?? '');
+    final emailCtrl = TextEditingController(text: garage?.email ?? '');
+    final addressCtrl = TextEditingController(text: garage?.address ?? '');
+
+    bool isSaving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.fromLTRB(20, 24, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Edit Profile & Garage', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Garage Name *', hintText: 'e.g. Shree Auto Garage', prefixIcon: Icon(Icons.store, color: AppColors.primary)),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: ownerCtrl,
+                  decoration: const InputDecoration(labelText: 'Owner / Manager Name', hintText: 'e.g. Rajesh Sharma', prefixIcon: Icon(Icons.person_outline, color: AppColors.primary)),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(labelText: 'Phone Number', hintText: 'e.g. +91 9876543210', prefixIcon: Icon(Icons.phone, color: AppColors.primary)),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(labelText: 'Email Address', hintText: 'e.g. contact@garage.com', prefixIcon: Icon(Icons.email, color: AppColors.primary)),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: addressCtrl,
+                  maxLines: 2,
+                  decoration: const InputDecoration(labelText: 'Address', hintText: 'e.g. Shop 4, Station Road, Pune', prefixIcon: Icon(Icons.location_on, color: AppColors.primary)),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    onPressed: isSaving
+                        ? null
+                        : () async {
+                            if (nameCtrl.text.trim().isEmpty) {
+                              Fluttertoast.showToast(msg: 'Garage Name is required');
+                              return;
+                            }
+                            setSheetState(() => isSaving = true);
+                            try {
+                              final authProvider = context.read<AuthProvider>();
+                              final updated = await GarageService.updateGarage(
+                                name: nameCtrl.text.trim(),
+                                ownerName: ownerCtrl.text.trim().isEmpty ? null : ownerCtrl.text.trim(),
+                                address: addressCtrl.text.trim().isEmpty ? null : addressCtrl.text.trim(),
+                                phone: phoneCtrl.text.trim().isEmpty ? null : phoneCtrl.text.trim(),
+                                email: emailCtrl.text.trim().isEmpty ? null : emailCtrl.text.trim(),
+                              );
+
+                              await authProvider.updateGarageName(updated.name);
+                              if (ownerCtrl.text.trim().isNotEmpty) {
+                                await authProvider.updateStaffName(ownerCtrl.text.trim());
+                              }
+
+                              if (ctx.mounted) Navigator.pop(ctx);
+                              Fluttertoast.showToast(msg: 'Profile updated successfully!');
+                            } catch (e) {
+                              Fluttertoast.showToast(msg: 'Failed to update profile: ${e.toString().replaceFirst('Exception: ', '')}');
+                            } finally {
+                              if (ctx.mounted) setSheetState(() => isSaving = false);
+                            }
+                          },
+                    child: isSaving
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Text('Save Profile Details', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,8 +144,16 @@ class MoreScreen extends StatelessWidget {
         children: [
           _buildMenuItem(
             context,
-            icon: Icons.two_wheeler,
+            icon: Icons.person_outline,
             iconColor: AppColors.primary,
+            title: 'Profile Update',
+            subtitle: 'Update garage name, owner & contact details',
+            onTap: () => _showEditGarageSheet(context),
+          ),
+          _buildMenuItem(
+            context,
+            icon: Icons.two_wheeler,
+            iconColor: Colors.amber.shade800,
             title: 'Vehicles',
             subtitle: 'Manage customer vehicles',
             onTap: () => context.push('/vehicles'),
@@ -44,6 +174,7 @@ class MoreScreen extends StatelessWidget {
             subtitle: 'Business reports & revenue analytics',
             onTap: () => context.push('/reports'),
           ),
+          const Divider(height: 24, color: AppColors.cardBorder),
           _buildMenuItem(
             context,
             icon: Icons.info_outline,
@@ -103,19 +234,29 @@ class MoreScreen extends StatelessWidget {
   }) {
     return Card(
       color: AppColors.surface,
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: AppColors.cardBorder, width: 1),
+      ),
       child: ListTile(
         leading: Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: iconColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: iconColor, size: 24),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-        subtitle: Text(subtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-        trailing: const Icon(Icons.chevron_right, color: AppColors.textLight),
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+        ),
+        trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
         onTap: onTap,
       ),
     );

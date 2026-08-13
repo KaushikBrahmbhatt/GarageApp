@@ -3,7 +3,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import '../../config/app_colors.dart';
 import '../../models/report_analytics.dart';
 import '../../services/report_service.dart';
-import '../../widgets/skeleton_loader.dart';
+import '../../widgets/rpm_gauge_loader.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -99,10 +99,25 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
             const SizedBox(height: 16),
 
-            if (_loading)
-              const SkeletonListLoader(count: 4)
+            if (_loading && _analytics == null)
+              const SizedBox(
+                height: 380,
+                child: Center(
+                  child: RpmGaugeLoader(
+                    size: 150.0,
+                    statusMessages: [
+                      'Analyzing garage revenue',
+                      'Calculating job statistics',
+                      'Preparing timeline chart',
+                    ],
+                  ),
+                ),
+              )
             else if (_analytics == null)
-              const Center(child: Text('Failed to load reports', style: TextStyle(color: AppColors.textSecondary)))
+              const SizedBox(
+                height: 200,
+                child: Center(child: Text('Failed to load reports', style: TextStyle(color: AppColors.textSecondary))),
+              )
             else ...[
               // Revenue Overview Card
               Card(
