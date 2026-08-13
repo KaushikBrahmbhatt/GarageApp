@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../config/app_colors.dart';
 import '../../models/vehicle.dart';
 import '../../services/customer_service.dart';
@@ -122,6 +123,7 @@ class _VehiclesScreenState extends State<VehiclesScreen> {
                               ),
                               subtitle: Text(v.vehicleNumber, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
                               trailing: const Icon(Icons.chevron_right, color: AppColors.textLight),
+                              onTap: () => context.push('/vehicle/${v.id}'),
                             ),
                           );
                         },

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../config/app_colors.dart';
 import '../../models/customer.dart';
 import '../../services/customer_service.dart';
@@ -181,6 +182,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
                               title: Text(c.name, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                               subtitle: Text(c.phone, style: const TextStyle(color: AppColors.textSecondary)),
                               trailing: Text('${c.vehicles.length} vehicle(s)', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                              onTap: () => context.push('/customer/${c.id}'),
                             ),
                           );
                         },

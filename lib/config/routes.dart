@@ -5,6 +5,8 @@ import '../screens/new_job/new_job_screen.dart';
 import '../screens/job_card/job_card_screen.dart';
 import '../screens/invoice/invoice_screen.dart';
 import '../screens/vehicles/vehicles_screen.dart';
+import '../screens/vehicles/vehicle_detail_screen.dart';
+import '../screens/customers/customer_detail_screen.dart';
 import '../screens/services/services_repairs_screen.dart';
 import '../screens/inventory/inventory_screen.dart';
 import '../screens/reports/reports_screen.dart';
@@ -32,12 +34,20 @@ class AppRouter {
           builder: (context, state) => const MainShellScreen(initialIndex: 3),
         ),
         GoRoute(
+          path: '/customer/:id',
+          builder: (context, state) => CustomerDetailScreen(id: int.parse(state.pathParameters['id']!)),
+        ),
+        GoRoute(
           path: '/more',
           builder: (context, state) => const MainShellScreen(initialIndex: 4),
         ),
         GoRoute(
           path: '/vehicles',
           builder: (context, state) => const VehiclesScreen(),
+        ),
+        GoRoute(
+          path: '/vehicle/:id',
+          builder: (context, state) => VehicleDetailScreen(id: int.parse(state.pathParameters['id']!)),
         ),
         GoRoute(
           path: '/services',
@@ -71,4 +81,3 @@ class AppRouter {
     );
   }
 }
-

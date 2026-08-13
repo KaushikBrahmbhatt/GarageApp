@@ -26,4 +26,14 @@ class CustomerService {
     final json = data['data'] ?? data;
     return Customer.fromJson(json);
   }
+
+  static Future<Customer> update(int id, String name, String phone, String? email) async {
+    final data = await _api.put('/customers/$id', {
+      'name': name,
+      'phone': phone,
+      if (email != null && email.isNotEmpty) 'email': email,
+    });
+    final json = data['data'] ?? data;
+    return Customer.fromJson(json);
+  }
 }
