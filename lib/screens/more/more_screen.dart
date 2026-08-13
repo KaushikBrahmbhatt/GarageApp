@@ -44,15 +44,6 @@ class MoreScreen extends StatelessWidget {
             subtitle: 'Business reports & revenue analytics',
             onTap: () => context.push('/reports'),
           ),
-          const Divider(height: 24, color: AppColors.cardBorder),
-          _buildMenuItem(
-            context,
-            icon: Icons.settings_outlined,
-            iconColor: AppColors.textSecondary,
-            title: 'Settings',
-            subtitle: 'Garage profile & application settings',
-            onTap: () => context.push('/settings'),
-          ),
           _buildMenuItem(
             context,
             icon: Icons.info_outline,
