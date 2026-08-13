@@ -14,12 +14,14 @@ class GarageService {
 
   static Future<Garage> updateGarage({
     required String name,
+    String? ownerName,
     String? address,
     String? phone,
     String? email,
   }) async {
     final response = await _api.put('/garage', {
       'name': name,
+      if (ownerName != null) 'owner_name': ownerName,
       'address': address,
       'phone': phone,
       'email': email,
