@@ -368,26 +368,35 @@ class _NewJobScreenState extends State<NewJobScreen> {
     if (_currentStep == 3) title = 'Review Job';
     if (_currentStep == 4) title = 'Job Created';
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        leading: _currentStep == 4
-            ? null
-            : IconButton(
-                icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-                onPressed: () {
-                  if (_currentStep > 0) {
-                    setState(() => _currentStep--);
-                  } else {
-                    context.pop();
-                  }
-                },
-              ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-        backgroundColor: AppColors.surface,
-        elevation: 0,
+    return PopScope(
+      canPop: _currentStep == 0 || _currentStep == 4,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_currentStep > 0 && _currentStep < 4) {
+          setState(() => _currentStep--);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          leading: _currentStep == 4
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                  onPressed: () {
+                    if (_currentStep > 0) {
+                      setState(() => _currentStep--);
+                    } else {
+                      context.pop();
+                    }
+                  },
+                ),
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          backgroundColor: AppColors.surface,
+          elevation: 0,
+        ),
+        body: _buildCurrentScreenContent(),
       ),
-      body: _buildCurrentScreenContent(),
     );
   }
 
