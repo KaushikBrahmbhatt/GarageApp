@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../config/api_config.dart';
 import '../../models/garage.dart';
 import '../../services/garage_service.dart';
+import '../../widgets/rpm_gauge_loader.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -52,9 +53,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (_) {}
   }
 
-  void _showEditGarageSheet() {
+  void _showEditGarageSheet() async {
+    RpmGaugeLoader.show(context, statusMessages: ['Loading garage details']);
+    try {
+      final fresh = await GarageService.getGarage();
+      if (mounted) setState(() => _garage = fresh);
+    } catch (_) {}
+    if (mounted) RpmGaugeLoader.hide(context);
+
+    if (!mounted) return;
+
     final nameCtrl = TextEditingController(text: _garage?.name ?? context.read<AuthProvider>().garageName ?? '');
-    final ownerCtrl = TextEditingController(text: _garage?.ownerName ?? '');
+    final ownerCtrl = TextEditingController(text: _garage?.ownerName ?? context.read<AuthProvider>().staffName ?? '');
     final phoneCtrl = TextEditingController(text: _garage?.phone ?? '');
     final emailCtrl = TextEditingController(text: _garage?.email ?? '');
     final addressCtrl = TextEditingController(text: _garage?.address ?? '');
