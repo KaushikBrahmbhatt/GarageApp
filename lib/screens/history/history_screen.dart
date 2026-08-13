@@ -195,6 +195,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   children: ['All', 'New', 'In Progress', 'Completed'].map((tab) => Padding(
                     padding: const EdgeInsets.only(right: 8.0),
                     child: ChoiceChip(
+                      showCheckmark: false,
                       label: Text(tab),
                       selected: _selectedFilter == tab,
                       selectedColor: AppColors.primary,

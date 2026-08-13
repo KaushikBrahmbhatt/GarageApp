@@ -630,7 +630,7 @@ class _JobCardScreenState extends State<JobCardScreen> {
                       : () => _updateStatus(jobCard, 'in_progress'),
                   child: _updatingStatus
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text('Start Work ▶', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                      : const Text('Start Work', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(height: 12),
@@ -663,7 +663,7 @@ class _JobCardScreenState extends State<JobCardScreen> {
                     : () => _updateStatus(jobCard, 'completed'),
                 child: _updatingStatus
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Complete Job ✓', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                    : const Text('Complete Job', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
             const SizedBox(height: 12),
