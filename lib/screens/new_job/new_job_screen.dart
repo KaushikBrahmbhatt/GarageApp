@@ -11,6 +11,7 @@ import '../../services/job_card_service.dart';
 import '../../providers/dashboard_provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../../widgets/rpm_gauge_loader.dart';
+import '../../widgets/status_badge.dart';
 
 class NewJobScreen extends StatefulWidget {
   const NewJobScreen({super.key});
@@ -888,7 +889,7 @@ class _NewJobScreenState extends State<NewJobScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: const [
                         Text('Status', style: TextStyle(color: AppColors.textSecondary)),
-                        Text('New', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.warningText)),
+                        StatusBadge(status: 'new'),
                       ],
                     ),
                   ],

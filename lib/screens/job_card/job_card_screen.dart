@@ -6,6 +6,7 @@ import '../../models/job_card.dart';
 import '../../providers/job_card_provider.dart';
 import '../../services/job_card_service.dart';
 import '../../widgets/skeleton_loader.dart';
+import '../../widgets/status_badge.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class JobCardScreen extends StatefulWidget {
@@ -228,40 +229,12 @@ class _JobCardScreenState extends State<JobCardScreen> {
         backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16, top: 12, bottom: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              // BUG-09 fix: distinct color for every status
-              color: status == 'completed'
-                  ? AppColors.successBg
-                  : status == 'in_progress'
-                      ? const Color(0xFF1A3A5C)
-                      : status == 'waiting_confirmation'
-                          ? const Color(0xFF3A2A00)
-                          : AppColors.warningBg,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              // BUG-09 fix: correct label for every status
-              status == 'completed'
-                  ? 'Completed'
-                  : status == 'in_progress'
-                      ? 'In Progress'
-                      : status == 'waiting_confirmation'
-                          ? 'Awaiting Confirmation'
-                          : 'New',
-              style: TextStyle(
-                color: status == 'completed'
-                    ? AppColors.successText
-                    : status == 'in_progress'
-                        ? const Color(0xFF60AFFF)
-                        : status == 'waiting_confirmation'
-                            ? const Color(0xFFFFB347)
-                            : AppColors.warningText,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
+          Padding(
+            padding: const EdgeInsets.only(right: 16, top: 12, bottom: 12),
+            child: StatusBadge(
+              status: status,
+              fontSize: 12,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             ),
           ),
         ],

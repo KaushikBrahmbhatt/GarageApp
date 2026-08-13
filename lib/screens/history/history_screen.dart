@@ -5,6 +5,7 @@ import '../../models/job_card.dart';
 import '../../services/job_card_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../../widgets/skeleton_loader.dart';
+import '../../widgets/status_badge.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -62,33 +63,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
       return matchesFilter && matchesSearch;
     }).toList();
-  }
-
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'new': return AppColors.primary;
-      case 'in_progress': return AppColors.warningText;
-      case 'completed': return AppColors.successText;
-      default: return AppColors.textSecondary;
-    }
-  }
-
-  Color _statusBg(String status) {
-    switch (status) {
-      case 'new': return AppColors.primaryLight;
-      case 'in_progress': return AppColors.warningBg;
-      case 'completed': return AppColors.successBg;
-      default: return AppColors.background;
-    }
-  }
-
-  String _statusLabel(String status) {
-    switch (status) {
-      case 'new': return 'New';
-      case 'in_progress': return 'In Progress';
-      case 'completed': return 'Completed';
-      default: return status;
-    }
   }
 
   @override
@@ -175,11 +149,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   children: [
                                     Text('₹${jc.finalTotal.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.primary)),
                                     const SizedBox(height: 4),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                      decoration: BoxDecoration(color: _statusBg(jc.status), borderRadius: BorderRadius.circular(6)),
-                                      child: Text(_statusLabel(jc.status), style: TextStyle(color: _statusColor(jc.status), fontSize: 10, fontWeight: FontWeight.bold)),
-                                    ),
+                                    StatusBadge(status: jc.status, fontSize: 10, padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2)),
                                   ],
                                 ),
                                 onTap: () => context.push('/job-card/${jc.id}'),
