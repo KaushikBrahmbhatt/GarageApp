@@ -57,6 +57,13 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateStaffName(String newStaffName) async {
+    _staffName = newStaffName;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('staff_name', newStaffName);
+    notifyListeners();
+  }
+
   Future<void> logout() async {
     await _authService.logout();
     _token      = null;

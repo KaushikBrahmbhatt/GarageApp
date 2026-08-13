@@ -137,6 +137,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               );
 
                               await authProvider.updateGarageName(updated.name);
+                              if (ownerCtrl.text.trim().isNotEmpty) {
+                                await authProvider.updateStaffName(ownerCtrl.text.trim());
+                              }
                               if (mounted) {
                                 setState(() => _garage = updated);
                               }
