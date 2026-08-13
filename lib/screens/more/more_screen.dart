@@ -38,14 +38,6 @@ class MoreScreen extends StatelessWidget {
           ),
           _buildMenuItem(
             context,
-            icon: Icons.inventory_2_outlined,
-            iconColor: Colors.purple,
-            title: 'Parts / Inventory',
-            subtitle: 'Manage parts stock and prices',
-            onTap: () => context.push('/inventory'),
-          ),
-          _buildMenuItem(
-            context,
             icon: Icons.bar_chart_outlined,
             iconColor: Colors.indigo,
             title: 'Reports',

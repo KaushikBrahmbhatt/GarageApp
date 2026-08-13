@@ -364,7 +364,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                       backgroundColor: AppColors.primaryLight,
                       child: Icon(Icons.receipt_long, color: AppColors.primary, size: 22),
                     ),
-                    title: Text('JOB-2025-${jc.id.toString().padLeft(6, '0')}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
+                    title: Text('JOB-${jc.createdAt.year}-${jc.id.toString().padLeft(6, '0')}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

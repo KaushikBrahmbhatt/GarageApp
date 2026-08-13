@@ -11,6 +11,7 @@ import '../../widgets/status_badge.dart';
 import '../../widgets/rpm_gauge_loader.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
+import '../../services/service_catalog_service.dart';
 
 class JobCardScreen extends StatefulWidget {
   final int id;
@@ -153,21 +154,27 @@ class _JobCardScreenState extends State<JobCardScreen> {
     }
   }
 
-  void _showAddExtraWorkSheet(JobCard jobCard) {
+  void _showAddExtraWorkSheet(JobCard jobCard) async {
     final searchCtrl = TextEditingController();
-    final List<Map<String, dynamic>> masterWorkOptions = [
-      {'name': 'General Service', 'price': 300.0, 'type': 'service'},
-      {'name': 'Oil Change', 'price': 150.0, 'type': 'service'},
-      {'name': 'Brake Check', 'price': 200.0, 'type': 'service'},
-      {'name': 'Battery Check', 'price': 250.0, 'type': 'service'},
-      {'name': 'Engine Check', 'price': 250.0, 'type': 'service'},
-      {'name': 'Brake Liner Replacement', 'price': 450.0, 'type': 'repair'},
-      {'name': 'Air Filter', 'price': 120.0, 'type': 'part'},
-      {'name': 'Spark Plug', 'price': 90.0, 'type': 'part'},
-      {'name': 'Engine Oil (10W30)', 'price': 450.0, 'type': 'part'},
-      {'name': 'Chain Set', 'price': 550.0, 'type': 'part'},
-      {'name': 'Clutch Adjustment', 'price': 150.0, 'type': 'repair'},
-    ];
+    List<Map<String, dynamic>> masterWorkOptions = [];
+
+    try {
+      final services = await ServiceCatalogService.list();
+      masterWorkOptions = services.map((s) => {
+        'name': s.name,
+        'price': s.price,
+        'type': s.type,
+      }).toList();
+    } catch (_) {
+      masterWorkOptions = [
+        {'name': 'General Service', 'price': 300.0, 'type': 'service'},
+        {'name': 'Oil Change', 'price': 150.0, 'type': 'service'},
+        {'name': 'Brake Check', 'price': 200.0, 'type': 'service'},
+        {'name': 'Engine Check', 'price': 250.0, 'type': 'service'},
+      ];
+    }
+
+    if (!mounted) return;
 
     final existingNames = jobCard.items.map((i) => i.description.trim().toLowerCase()).toSet();
 
@@ -281,7 +288,7 @@ class _JobCardScreenState extends State<JobCardScreen> {
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
-          title: Text('JOB-2025-${widget.id.toString().padLeft(6, '0')}', style: const TextStyle(fontWeight: FontWeight.bold)),
+          title: Text('JOB-${DateTime.now().year}-${widget.id.toString().padLeft(6, '0')}', style: const TextStyle(fontWeight: FontWeight.bold)),
           backgroundColor: AppColors.surface,
           elevation: 0,
         ),
@@ -324,7 +331,7 @@ class _JobCardScreenState extends State<JobCardScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('JOB-2025-${widget.id.toString().padLeft(6, '0')}', style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('JOB-${jobCard.createdAt.year}-${widget.id.toString().padLeft(6, '0')}', style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [

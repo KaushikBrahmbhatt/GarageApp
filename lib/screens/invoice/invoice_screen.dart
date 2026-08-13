@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
@@ -6,6 +7,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
 import '../../config/theme.dart';
 import '../../models/job_card.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/job_card_service.dart';
 import '../../widgets/rpm_gauge_loader.dart';
 
@@ -41,12 +43,12 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
     return DateFormat('dd MMM yyyy, hh:mm a').format(dt.toLocal());
   }
 
-  void _shareWhatsApp() async {
+  void _shareWhatsApp(String garageName) async {
     if (_jobCard == null) return;
     final jc = _jobCard!;
     final itemLines = jc.items.map((i) => '  • ${i.description}: ₹${i.price.toStringAsFixed(0)}').join('\n');
     final message = '''
-*Kaushik Garage* 🔧
+*$garageName* 🔧
 ━━━━━━━━━━━━━━━━━
 *Bill for: ${jc.customer?.name ?? ''}*
 📱 ${jc.customer?.phone ?? ''}
@@ -58,13 +60,13 @@ $itemLines
 ━━━━━━━━━━━━━━━━━
 💰 *Total: ₹${jc.finalTotal.toStringAsFixed(2)}*
 
-Thank you for visiting Kaushik Garage! 🙏
+Thank you for visiting $garageName! 🙏
 ''';
 
-    await Share.share(message, subject: 'Bill from Kaushik Garage');
+    await Share.share(message, subject: 'Bill from $garageName');
   }
 
-  Future<void> _savePdf() async {
+  Future<void> _savePdf(String garageName) async {
     if (_jobCard == null) return;
     final jc = _jobCard!;
 
@@ -74,7 +76,7 @@ Thank you for visiting Kaushik Garage! 🙏
       build: (context) => pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          pw.Center(child: pw.Text('KAUSHIK GARAGE', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold))),
+          pw.Center(child: pw.Text(garageName.toUpperCase(), style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold))),
           pw.Center(child: pw.Text('Two-Wheeler Repair & Service', style: const pw.TextStyle(fontSize: 12))),
           pw.SizedBox(height: 4),
           pw.Divider(),
@@ -129,6 +131,8 @@ Thank you for visiting Kaushik Garage! 🙏
 
   @override
   Widget build(BuildContext context) {
+    final garageName = context.watch<AuthProvider>().garageName ?? 'Garage Management';
+
     return Scaffold(
       backgroundColor: AppTheme.kBackground,
       appBar: AppBar(
@@ -165,9 +169,9 @@ Thank you for visiting Kaushik Garage! 🙏
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 // Header
-                                const Center(
-                                  child: Text('KAUSHIK GARAGE',
-                                      style: TextStyle(color: Color(0xFFF97316), fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                                Center(
+                                  child: Text(garageName.toUpperCase(),
+                                      style: const TextStyle(color: Color(0xFFF97316), fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                                 ),
                                 const Center(
                                   child: Text('Two-Wheeler Repair & Service',
@@ -218,9 +222,9 @@ Thank you for visiting Kaushik Garage! 🙏
                                 ]),
 
                                 const SizedBox(height: 16),
-                                const Center(
-                                  child: Text('Thank you for visiting Kaushik Garage! 🙏',
-                                      style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                Center(
+                                  child: Text('Thank you for visiting $garageName! 🙏',
+                                      style: const TextStyle(color: Colors.grey, fontSize: 12)),
                                 ),
                               ],
                             ),
@@ -242,7 +246,7 @@ Thank you for visiting Kaushik Garage! 🙏
                                 padding: const EdgeInsets.symmetric(vertical: 14)),
                             icon: const Icon(Icons.chat, color: Colors.white),
                             label: const Text('WhatsApp', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                            onPressed: _shareWhatsApp,
+                            onPressed: () => _shareWhatsApp(garageName),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -254,7 +258,7 @@ Thank you for visiting Kaushik Garage! 🙏
                                 padding: const EdgeInsets.symmetric(vertical: 14)),
                             icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
                             label: const Text('Save PDF', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                            onPressed: _savePdf,
+                            onPressed: () => _savePdf(garageName),
                           ),
                         ),
                       ]),

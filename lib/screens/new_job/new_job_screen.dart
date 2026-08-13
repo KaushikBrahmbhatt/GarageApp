@@ -365,7 +365,7 @@ class _NewJobScreenState extends State<NewJobScreen> {
         context.read<DashboardProvider>().fetchDashboardStats();
       }
       setState(() {
-        _createdJobId = 'JOB-2025-${res.id.toString().padLeft(6, '0')}';
+        _createdJobId = 'JOB-${res.createdAt.year}-${res.id.toString().padLeft(6, '0')}';
         _currentStep = 4; // Job Created Success Screen
       });
     } catch (e) {

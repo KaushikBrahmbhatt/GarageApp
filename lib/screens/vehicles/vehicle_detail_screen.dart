@@ -263,7 +263,7 @@ class _VehicleDetailScreenState extends State<VehicleDetailScreen> {
                       backgroundColor: AppColors.primaryLight,
                       child: Icon(Icons.build, color: AppColors.primary, size: 20),
                     ),
-                    title: Text('JOB-2025-${jc.id.toString().padLeft(6, '0')}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
+                    title: Text('JOB-${jc.createdAt.year}-${jc.id.toString().padLeft(6, '0')}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
