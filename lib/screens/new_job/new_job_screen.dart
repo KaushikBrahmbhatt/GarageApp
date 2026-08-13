@@ -8,6 +8,7 @@ import '../../models/vehicle.dart';
 import '../../services/customer_service.dart';
 import '../../services/vehicle_service.dart';
 import '../../services/job_card_service.dart';
+import '../../services/service_catalog_service.dart';
 import '../../providers/dashboard_provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../../widgets/rpm_gauge_loader.dart';
@@ -67,6 +68,21 @@ class _NewJobScreenState extends State<NewJobScreen> {
   void initState() {
     super.initState();
     _fetchRecentCustomers();
+    _fetchAvailableServices();
+  }
+
+  Future<void> _fetchAvailableServices() async {
+    try {
+      final items = await ServiceCatalogService.list();
+      if (items.isNotEmpty && mounted) {
+        setState(() {
+          _availableServices.clear();
+          for (final i in items) {
+            _availableServices[i.name] = i.price;
+          }
+        });
+      }
+    } catch (_) {}
   }
 
   @override
